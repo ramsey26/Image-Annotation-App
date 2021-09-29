@@ -1,0 +1,36 @@
+﻿@model WebApp.Models.AppUser
+
+@{
+    ViewBag.Title = "Login";
+}
+<style>
+    .mainContainer{
+        border:2px solid red;
+        width:40%;
+        height:200px;
+        padding-left:100px;
+        padding-right:30px;
+        padding-top:20px;
+    }
+</style>
+@using (Html.BeginForm("Login", "Home", FormMethod.Post))
+{
+<fieldset style="margin-top:10%;margin-bottom:0;">
+
+    <h1 class="h3 mb-3 fw-normal">Please sign in</h1>
+    <div class="mainContainer">
+        <div class="form-group">
+            @Html.LabelFor(a => a.UserName)
+            @Html.TextBoxFor(a => a.UserName, new { @class = "form-control" })
+            @Html.ValidationMessageFor(a => a.UserName)
+        </div>
+        <div class="form-group">
+            @Html.LabelFor(a => a.Password)
+            @Html.TextBoxFor(a => a.Password, new { @class = "form-control" })
+            @Html.ValidationMessageFor(a => a.Password)
+        </div>
+
+    </div>
+    <button type="submit" class="alert-danger w-100 btn btn-lg btn-primary" >Sign in</button>
+</fieldset>
+}  

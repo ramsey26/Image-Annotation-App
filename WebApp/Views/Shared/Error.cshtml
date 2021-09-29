@@ -1,0 +1,25 @@
+﻿@model System.Web.Mvc.HandleErrorInfo
+
+@{ 
+    ViewBag.Title = "Error";
+}
+
+<div class="container">
+    <h2 style="color:red;">Error Occured.</h2>
+    <ul>
+        <li><label>Action: @Model.ActionName</label></li>
+        <li><label>Controller: @Model.ControllerName</label></li>
+        <li><label>Message: @Model.Exception.Message</label></li>
+    </ul>
+    
+    <hr />
+    <h3>InnerException:</h3>
+    <p>@Model.Exception.InnerException</p>
+    <hr />
+    <h3>StackTrace:</h3>
+    <p>@Model.Exception.StackTrace</p>
+    <hr />
+</div>
+       
+  
+

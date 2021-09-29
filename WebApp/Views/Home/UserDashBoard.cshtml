@@ -1,0 +1,104 @@
+﻿@{
+    ViewBag.Title = "UserDashBoard";
+}
+<style>
+    .mainContainer{
+        position:relative;
+        width:100%;
+        height:600px;
+        border:0px solid red;
+    }
+    .leftCol {
+        position: absolute;
+        width: 20%;
+        height: 100%;
+        border: 0px solid green;
+        left:0px;
+        top:0px;
+        background-color:beige;
+    }
+    .midCol {
+        position: absolute;
+        width: 50%;
+        height: 480px;
+        border: 1px solid blue;
+        left: 20%;
+        top: 0px;
+        align-content: center;
+    }
+    .rightCol {
+        position: absolute;
+        width: 30%;
+        height: 100%;
+        border: 0px solid yellow;
+        right: 0px;
+        top: 0px;
+        background-color: beige;
+    }
+    label {
+        background-color: indigo;
+        color: white;
+        padding: 0.5rem;
+        font-family: sans-serif;
+        border-radius: 0.3rem;
+        cursor: pointer;
+        margin-top: 1rem;
+    }
+
+    #file-chosen {
+        margin-left: 0.3rem;
+        font-family: sans-serif;
+    }
+    #testCanvas {
+        border: 1px solid red;
+        background-size: 640px 480px;
+        background-repeat: no-repeat;
+        margin:auto auto;
+    }
+</style>
+<script src="https://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script>
+    $(document).ready(function () {
+        const actualBtn = document.getElementById('actual-btn');
+
+        const fileChosen = document.getElementById('file-chosen');
+
+        const reader = new FileReader();
+
+        reader.addEventListener("load", function () {
+            testCanvas.style.backgroundImage = `url(${reader.result})`;
+        }, false);
+
+        actualBtn.addEventListener('change', function () {
+            fileChosen.textContent = this.files[0].name;
+            const image = this.files[0];
+            if (image) reader.readAsDataURL(image);
+
+        });
+    }); 
+</script>
+    @if (Session["UserName"] != null)
+    {
+        <text>
+            <legend>Welcome @Session["UserName"].ToString()</legend>
+        </text>
+
+<div class="mainContainer">
+    <div class="leftCol"></div>
+    <div class="midCol">
+        <canvas id="testCanvas" width=640 height=480></canvas>
+    </div>
+    <div class="rightCol">
+        <!-- actual upload which is hidden -->
+        <input style="display:none;" type="file" id="actual-btn" />
+
+        <!-- our custom upload button -->
+        <label for="actual-btn">Choose File</label>
+
+        <!-- name of file chosen -->
+        <span id="file-chosen">No file chosen</span>
+    </div>
+</div>
+        
+
+    }
