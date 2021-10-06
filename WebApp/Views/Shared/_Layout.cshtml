@@ -6,7 +6,9 @@
     <title>@ViewBag.Title - My ASP.NET Application</title>
     @Styles.Render("~/Content/css")
     @Scripts.Render("~/bundles/modernizr")
-    @Html.Hidden("ErrorMessage", ViewData["errorMessage"]);
+    @Html.Hidden("ErrorMessage", TempData["errorMessage"]);
+    @Html.Hidden("SuccessMessage", TempData["successMessage"]);
+
     <style>
         .footer {
             position: fixed;
@@ -16,6 +18,11 @@
             background-color: cornflowerblue;
             color: white;
             text-align: center;
+        }
+
+        body {
+            font-family: Verdana;
+            font-size: small;
         }
     </style>
 
@@ -33,7 +40,7 @@
         function showToastr() {
 
             if ($("#ErrorMessage").val() != null && $("#ErrorMessage").val() != "") {
-            
+
                 toastr.options =
                 {
                     "debug": false,
@@ -47,11 +54,25 @@
 
                 toastr["error"]($("#ErrorMessage").val());
             }
+
+            if ($("#SuccessMessage").val() != null && $("#SuccessMessage").val() != "") {
+
+                toastr.options =
+                {
+                    "debug": false,
+                    "positionClass": "toast-bottom-right",
+                    "onclick": null,
+                    "fadeIn": 300,
+                    "fadeOut": 200,
+                    "timeOut": 3000,
+                    "extendedTimeOut": 1000
+                }
+
+                toastr["success"]($("#SuccessMessage").val());
+            }
         }
         showToastr();
     </script>
-
-    <link rel="stylesheet" type="text/css" href="toastrsample.css">
 
 </head>
 <body>
@@ -63,7 +84,7 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                @Html.ActionLink("Image Annotation", "", "", new { area = "" }, new { @class = "navbar-brand" })
+                @Html.ActionLink("Image Annotation", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
             </div>
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
@@ -72,9 +93,9 @@
                             string sessionToken = null;
                             sessionToken = Session["JwtBearerToken"] != null ? Session["JwtBearerToken"].ToString() : null;
                         }*@
-                    @if (ViewBag.Username != null)
+                    @if (HttpContext.Current.User.Identity.IsAuthenticated)
                     {
-                        <li class="@(ViewContext.RouteData.Values["Action"].ToString() == "Dashboard" ? "active" : "")">@Html.ActionLink("Dashboard", "Dashboard", "Home")</li>
+                        <li class="@(ViewContext.RouteData.Values["Action"].ToString() == "Dashboard" ? "active" : "")">@Html.ActionLink("Dashboard", "Dashboard", "Dashboard")</li>
                     }
 
                 </ul>
@@ -83,17 +104,16 @@
         </div>
     </div>
     <div class="container body-content">
-        <label>@ViewData["errorLabel"]</label>
         @RenderBody()
     </div>
     @*<div class="footer">
-        <p>&copy; @DateTime.Now.Year - My ASP.NET Application</p>
-    </div>*@
+            <p>&copy; @DateTime.Now.Year - My ASP.NET Application</p>
+        </div>*@
 
     @Scripts.Render("~/bundles/jquery")
     @Scripts.Render("~/bundles/bootstrap")
     @RenderSection("scripts", required: false)
 
-
+   
 </body>
 </html>

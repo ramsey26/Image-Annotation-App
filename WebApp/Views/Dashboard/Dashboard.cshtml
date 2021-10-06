@@ -1,0 +1,79 @@
+﻿@model WebApp.Models.DashboardViewModel
+@using WebApp.Controllers
+
+@{
+    ViewBag.Title = "Dashboard";
+}
+<style>
+    .mainContainer {
+        width: 100%;
+        height: 500px;
+        border: 2px solid black;
+    }
+
+    .leftDiv {
+        border: 2px solid green;
+        float: left;
+        width: 10%;
+        height: 100%;
+    }
+
+    .midDiv {
+        border: 2px solid blue;
+        float: left;
+        width: 57%;
+        height: 100%;
+    }
+
+    .rightDiv {
+        border: 2px solid red;
+        float: left;
+        width: 33%;
+        height: 100%;
+    }
+
+    .lblFileUpload {
+        background-color: indigo;
+        color: white;
+        padding: 0.5rem;
+        font-family: sans-serif;
+        border-radius: 0.3rem;
+        cursor: pointer;
+        margin-top: 1rem;
+    }
+
+    #file-chosen {
+        margin-left: 0.3rem;
+        font-family: sans-serif;
+    }
+
+    #testCanvas {
+        border: 1px solid red;
+        background-size: 640px 480px;
+        background-repeat: no-repeat;
+        margin: auto auto;
+    }
+</style>
+<script src="https://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script>
+    $(document).ready(function () {
+    });
+</script>
+<script src="~/Scripts/Dashboard/Dashboard.js"></script>
+@using (Html.BeginForm("Dashboard", "Dashboard", FormMethod.Post, new { id = DashboardController.DashboardForm, encType = "multipart/form-data" }))
+{
+    @Html.Hidden("UploadFileUrl", Url.Action("UploadFile", "Dashboard"))
+
+    if (Model.MemberDataModel.UserName != null)
+    {
+        <div id="divUploadFilePanel">
+            @Html.Partial("UploadFile", Model.FileUploadModel)
+        </div>
+
+        <div id="divImageAnnotationPanel">
+            @Html.Partial("ImageAnnotationPartial", Model.MemberDataModel)
+        </div>
+
+    }
+}
+

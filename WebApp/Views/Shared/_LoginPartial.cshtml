@@ -1,10 +1,5 @@
-﻿@{
-    string sessionToken = null;
-    sessionToken = Session["JwtBearerToken"] != null ? Session["JwtBearerToken"].ToString() : null;
-}
-
-@*@if (!String.IsNullOrEmpty(sessionToken))*@
-@if (ViewBag.Username != null)
+﻿
+@if (HttpContext.Current.User.Identity.IsAuthenticated)
 {
 
     using (Html.BeginForm("LogOff", "Account", FormMethod.Post, new { id = "logoutForm", @class = "navbar-right" }))
@@ -15,7 +10,8 @@
             <li><a href="javascript:document.getElementById('logoutForm').submit()">Log off</a></li>
         </ul>
         <ul class="nav navbar-nav navbar-right">
-            <li><label style="color:white;margin-top:15px;">Welcome @ViewBag.Username</label></li>
+            @*<li><label style="color:white;margin-top:15px;">Welcome @ViewBag.Username</label></li>*@
+            <li><label class="nav navbar-nav navbar-link" style="margin-top:15px;">Welcome @HttpContext.Current.User.Identity.Name</label></li>
         </ul>
     }
 }

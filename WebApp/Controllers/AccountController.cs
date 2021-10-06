@@ -19,12 +19,6 @@ namespace WebApp.Controllers
             accountService = new AccountService();
         }
       
-        // GET: Account
-        public ActionResult Index()
-        {
-            return View();
-        }
-
         [HttpPost]
         [AllowAnonymous]
        // [ValidateAntiForgeryToken]
@@ -32,7 +26,7 @@ namespace WebApp.Controllers
         {
             Session.Remove(JwtBearerToken);
             Request.GetOwinContext().Authentication.SignOut("ApplicationCookie");
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("Login", "Account");
         }
         //
         // GET: /Account/Login
@@ -44,7 +38,6 @@ namespace WebApp.Controllers
             return View(loginViewModel);
         }
 
-        //
         // POST: /Account/Login
         [HttpPost]
         [AllowAnonymous]
@@ -69,7 +62,7 @@ namespace WebApp.Controllers
                 var claims = new[]
                 {
                     new Claim(ClaimTypes.Name,userDto.Username),
-                    new Claim("AcessToken",string.Format("Bearer {0}",userDto.Token)),
+                    new Claim("AcessToken",userDto.Token),
                     new Claim(ClaimTypes.NameIdentifier,userDto.Username),
                     new Claim(ClaimTypes.X500DistinguishedName,"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")
                 };
@@ -77,7 +70,7 @@ namespace WebApp.Controllers
                 var identity = new ClaimsIdentity(claims, "ApplicationCookie");
                 Request.GetOwinContext().Authentication.SignIn(options, identity);
 
-                return RedirectToAction("Dashboard", "Home");
+                return RedirectToAction("Dashboard", "Dashboard");
             }
             catch(UnauthorizedAccessException ex)
             {
@@ -127,7 +120,7 @@ namespace WebApp.Controllers
                 var identity = new ClaimsIdentity(claims, "ApplicationCookie");
                 Request.GetOwinContext().Authentication.SignIn(options, identity);
 
-                return RedirectToAction("Dashboard", "Home");
+                return RedirectToAction("Dashboard", "Dashboard");
             }
             catch (HttpException ex)
             {
