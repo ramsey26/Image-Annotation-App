@@ -3,14 +3,17 @@
 <div class="mainContainer">
     <div class="leftDiv"></div>
     <div class="midDiv">
-        <canvas id="testCanvas" width=640 height=480></canvas>
+        <div id="divCanvasViewPartial" class="center">
+            @Html.Partial("CanvasViewPartial",Model.Photos.First())
+        </div>
     </div>
     <div class="rightDiv">
-        <!-- actual upload which is hidden -->
-        <!--<input style="display:none;" type="file" id="actual-btn" />-->
-        <!-- our custom upload button -->
-        <!--<label class="lblFileUpload" for="actual-btn">Choose File</label>-->
-        <!-- name of file chosen -->
-        <!--<span id="file-chosen">No file chosen</span>-->
-    </div>
-</div>
+        @if (Model.Photos != null &&
+      Model.Photos.Count > 0)
+        {
+        <div id="divGridViewPartial" style="width: 100%; height: 100%; overflow: scroll">
+            @Html.Partial("GridViewPartial", Model.Photos)
+        </div>
+        }
+            </div>
+        </div>

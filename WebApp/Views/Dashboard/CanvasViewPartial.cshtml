@@ -1,0 +1,17 @@
+﻿@model WebApp.Models.PhotoDataModel
+
+@{
+    Layout = null;
+}
+<style>
+    #testCanvas {
+       /* border: 1px solid red;*/
+        background-image :url( @VirtualPathUtility.ToAbsolute(Model.ImageVirtualPath) );
+        background-size: 640px 480px;
+        background-repeat:no-repeat;
+        margin: auto auto;
+    }
+</style>
+<div>
+    <canvas id="testCanvas" width=640 height=480></canvas>
+</div>

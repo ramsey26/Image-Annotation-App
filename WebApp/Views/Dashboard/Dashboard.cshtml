@@ -8,28 +8,38 @@
     .mainContainer {
         width: 100%;
         height: 500px;
-        border: 2px solid black;
+      /*  border: 2px solid black;*/
+      background-color:antiquewhite;
     }
 
     .leftDiv {
-        border: 2px solid green;
+        /* border: 2px solid green;*/
         float: left;
-        width: 10%;
+        width: 8%;
         height: 100%;
+        background-color:cadetblue;
     }
 
     .midDiv {
-        border: 2px solid blue;
+        background-image: url( @VirtualPathUtility.ToAbsolute("~/UploadedFiles/no-image.jpg") );
+        background-repeat: inherit;
+        background-size: 640px 480px;
         float: left;
-        width: 57%;
-        height: 100%;
+        width: 640px;
+        height: 480px;
+        display: block;
+        margin-left: 15px;
+       /* border: 2px solid black;*/
+        margin-top:10px;
     }
 
     .rightDiv {
-        border: 2px solid red;
+        /*background-color: cadetblue;*/
+        border:2px solid cadetblue;
         float: left;
         width: 33%;
         height: 100%;
+        margin-left: 15px;
     }
 
     .lblFileUpload {
@@ -47,33 +57,23 @@
         font-family: sans-serif;
     }
 
-    #testCanvas {
-        border: 1px solid red;
-        background-size: 640px 480px;
-        background-repeat: no-repeat;
-        margin: auto auto;
-    }
 </style>
-<script src="https://code.jquery.com/jquery-1.9.1.min.js"></script>
-<script>
-    $(document).ready(function () {
-    });
-</script>
+
 <script src="~/Scripts/Dashboard/Dashboard.js"></script>
 @using (Html.BeginForm("Dashboard", "Dashboard", FormMethod.Post, new { id = DashboardController.DashboardForm, encType = "multipart/form-data" }))
 {
     @Html.Hidden("UploadFileUrl", Url.Action("UploadFile", "Dashboard"))
-
+    @Html.Hidden("ImageFileUrl", Url.Action("GenerateImgFile", "Dashboard"))
+  
     if (Model.MemberDataModel.UserName != null)
     {
         <div id="divUploadFilePanel">
-            @Html.Partial("UploadFile", Model.FileUploadModel)
+            @Html.Partial("UploadFileViewPartial", Model.FileUploadModel)
         </div>
 
         <div id="divImageAnnotationPanel">
             @Html.Partial("ImageAnnotationPartial", Model.MemberDataModel)
         </div>
-
     }
 }
 

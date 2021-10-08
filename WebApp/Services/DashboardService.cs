@@ -7,12 +7,12 @@ using WebApp.Models;
 
 namespace WebApp.Services
 {
-    public class UserService
+    public class DashboardService
     {
         static HttpClient client;
         public UserSession _userSession = null;
 
-        public UserService()
+        public DashboardService()
         {
             _userSession = new UserSession();
             client = HttpClientService.Client;
@@ -38,6 +38,27 @@ namespace WebApp.Services
                 throw new Exception(ex.Message);
             }
             return memberDataModel;
+        }
+
+        public async Task<bool> UploadPhotoData(PhotoDataModel photoDataModel)
+        {
+            bool photoUploaded = false;
+            try
+            {
+                HttpResponseMessage resp = await client.PostAsJsonAsync("api/users/uploadPhotoData", photoDataModel);
+                resp.EnsureSuccessStatusCode();
+
+                if (resp.IsSuccessStatusCode)
+                {
+                    photoUploaded = true;
+                }
+      
+            }
+            catch(Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+            return photoUploaded;
         }
     }
 }

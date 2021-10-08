@@ -18,12 +18,15 @@ namespace WebApp.Controllers
     {
         public const string DashboardForm = "DashboardForm";
         public const string UploadFileForm = "UploadFileForm";
+        public const string SessionKeyUserData = "UserDashboardData";
+        public const string GeneratedImagesVirtualPath = "~/GeneratedImages/";
+
         public UserSession _userSession = null;
-        UserService userService;
+        DashboardService dashboardService;
         public DashboardController()
         {
             _userSession = new UserSession();
-            userService = new UserService();
+            dashboardService = new DashboardService();
         }
 
         public async Task<ActionResult> Dashboard()
@@ -31,26 +34,36 @@ namespace WebApp.Controllers
             MemberDataModel userData;
             DashboardViewModel dashboardViewModel;
 
-            userData = await userService.GetUserData();
-
-            ViewBag.Username = _userSession.Username.ToUpper();
-            ViewBag.AccessToken = _userSession.BearerToken;
+            userData = await dashboardService.GetUserData();
 
             dashboardViewModel = new DashboardViewModel();
+           
+            foreach(var image in userData.Photos)
+            {
+                byte[] imageToWrite = Convert.FromBase64String(image.FileContent);
+                string strtest = Server.MapPath(GeneratedImagesVirtualPath);
+
+                image.ImageVirtualPath = imageToWrite.WriteImageFile(strtest, GeneratedImagesVirtualPath, image.FileName);
+            }
+
             dashboardViewModel.MemberDataModel = userData;
+
+            Session[SessionKeyUserData] = userData;
+
             return View(dashboardViewModel);
         }
 
         [HttpPost]
-        public ActionResult UploadFile()
+        public async Task<ActionResult> UploadFile()
         {
             HttpPostedFileBase uploadedFile;
+          
             try
             {
                 if (Request.Files.Count == 0)
                 {
-                    TempData["errorMessage"] = "Please choose a file.";
-                    return Json("Please choose a file.");
+                    TempData["errorMessage"] = "Please choose a Photo.";
+                    return Json("Please choose a Photo.");
                 }
 
                 uploadedFile = Request.Files[0];
@@ -59,14 +72,26 @@ namespace WebApp.Controllers
 
                 if (fileExt != ".jpeg" && fileExt != ".jpg" && fileExt!=".png")
                 {
-                    TempData["errorMessage"] = "Please choose an image file.";
+                    TempData["errorMessage"] = "Please choose a photo.";
                     return Json("Please choose an image file.");
                 }
 
-                string path = Path.Combine(Server.MapPath("~/UploadedFiles/"), Path.GetFileName(uploadedFile.FileName));
-                uploadedFile.SaveAs(path);
+                // Converting to bytes.  
+                byte[] fileToSave = new byte[uploadedFile.InputStream.Length];
+                uploadedFile.InputStream.Read(fileToSave, 0, fileToSave.Length);
 
-                TempData["successMessage"] = "File uploaded successfully.";
+                PhotoDataModel photoDataModel = new PhotoDataModel
+                {
+                    FileName = uploadedFile.FileName,
+                    FileContent = Convert.ToBase64String(fileToSave),
+                    FileContentType = uploadedFile.ContentType
+                };
+
+                var isSuccess = await dashboardService.UploadPhotoData(photoDataModel);
+                if (isSuccess)
+                {
+                    TempData["successMessage"] = "Photo uploaded successfully.";
+                }
             }
             catch (Exception ex)
             {
@@ -74,8 +99,58 @@ namespace WebApp.Controllers
                 return Json(ex.Message);
             }
 
-            // return RedirectToAction("Dashboard", "Dashboard");
-            return Json("File uploaded Successfully.");
+            return Json("Photo uploaded Successfully.");
+        }
+
+        /// <summary>  
+        /// GET: /Dashboard/DownloadFile  
+        /// </summary>  
+        /// <param name="fileId">File Id parameter</param>  
+        /// <returns>Return download file</returns>  
+        public ActionResult DownloadFile(int fileId)
+        {
+            var userData = (MemberDataModel)Session[SessionKeyUserData];
+
+            var fileInfo = userData.Photos.FirstOrDefault(x => x.Id == fileId);
+
+            return this.GetFile(fileInfo.FileContent, fileInfo.FileContentType);
+        }
+
+        [HttpPost]
+        public ActionResult GenerateImgFile(int fileId)
+        {
+            var userData = (MemberDataModel)Session[SessionKeyUserData];
+
+            var photoDataModel = userData.Photos.FirstOrDefault(x => x.Id == fileId);
+
+            return PartialView("CanvasViewPartial", photoDataModel);
+        }
+
+        /// <summary>  
+        /// Get file method.  
+        /// </summary>  
+        /// <param name="fileContent">File content parameter.</param>  
+        /// <param name="fileContentType">File content type parameter</param>  
+        /// <returns>Returns - File.</returns>  
+        private FileResult GetFile(string fileContent, string fileContentType)
+        {
+            // Initialization.  
+            FileResult file;
+
+            try
+            {
+                // Get file.  
+                byte[] byteContent = Convert.FromBase64String(fileContent);
+                file = this.File(byteContent, fileContentType);
+            }
+            catch (Exception ex)
+            {
+                // Info.  
+                throw ex;
+            }
+
+            // info.  
+            return file;
         }
     }
 }

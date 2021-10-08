@@ -12,6 +12,6 @@ namespace WebApp.Models
         public DateTime DateCreated { get; set; }
         public DateTime DateModified { get; set; }
         public bool IsActive { get; set; }
-        public ICollection<PhotoDataModel> Photos { get; set; }
+        public List<PhotoDataModel> Photos { get; set; }
     }
 }

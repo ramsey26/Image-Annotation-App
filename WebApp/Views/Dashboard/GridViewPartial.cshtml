@@ -1,0 +1,40 @@
+﻿@model IEnumerable<WebApp.Models.PhotoDataModel>
+
+@using GridMvc.Html
+@{
+    ViewBag.Title = "Details";
+}
+@{
+    Layout = null;
+}
+<style>
+    .grid-header {
+      
+    }
+    .grid-row {
+        border: 2px solid green;
+    }
+</style>
+
+<div class="code-cut" >
+    @Html.Grid(Model).Columns(columns =>
+{
+columns.Add(c => c.Id).Titled("File ID").Filterable(false);
+
+columns.Add(c => c.FileName).Titled("FileName").Filterable(true)
+.Encoded(false)
+.Sanitized(false)
+.RenderValueAs(c =>@<a class="download-file1" style="cursor:pointer;" onclick='openImageInCanvas("@c.Id")'>
+                        @c.FileName </a>);
+
+columns.Add().Titled("Image Preview")
+.Encoded(false)
+.Sanitized(false)
+.SetWidth(100)
+.RenderValueAs(c => @<div style="width:100px;">
+    @*<img alt="Image" src='@Url.Action("DownloadFile", "Dashboard", new { fileId = c.Id })' width="100" height="100" />*@
+    <img alt="Image" src=@VirtualPathUtility.ToAbsolute(c.ImageVirtualPath) width="100" height="100" />
+</div>);
+
+}).WithPaging(10).Sortable(true).Selectable(true).Named("photoGridView")
+</div>

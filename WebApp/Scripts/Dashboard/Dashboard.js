@@ -1,11 +1,21 @@
 ﻿
-function uploadFile() {
-    var fileAttach = $("#formFile").val();
+function openImageInCanvas(id) {
+    var imageFileUrl = $("#ImageFileUrl").val();
 
-    //if (fileAttach == "") {
-    //    alert("Please attach a file.");
-    //    return false;
-    //}
+    $.ajax({
+        url: imageFileUrl,
+        data: '{fileId:' + JSON.stringify(id) + '}',
+        contentType: 'application/json; charset=utf-8',
+        type: 'POST',
+        success: function (data) {
+            $("#divCanvasViewPartial").html(data);
+        }
+    }).fail(function (callResult) {
+        ShowAjaxFailMessage(callResult, 'An error occurred : ');
+    });
+}
+
+function uploadFile() {
     var form = $("DashboardForm");
     var uploadFileUrl = $("#UploadFileUrl").val();
 
@@ -29,7 +39,22 @@ function uploadFile() {
             var message = data;
         },
         error: function (callResult) {
-            alert("Error on uploading file: " + callResult.responseText);
+            ShowAjaxFailMessage(callResult, 'An error occurred : ');
         }
     });
+}
+
+function ShowAjaxFailMessage(callResult, baseMessage) {
+    if (callResult.responseText.startsWith("<!DOC")) {
+        alert(baseMessage + '\n\n' + callResult.responseText);
+        return;
+    }
+
+    var infoData = JSON.parse(callResult.responseText);
+
+    var info = baseMessage + '\n\n' + infoData.message + '\n\n';
+    info = info + 'Stacktrace:\n' + infoData.stacktrace;
+
+    alert(info);
+
 }
