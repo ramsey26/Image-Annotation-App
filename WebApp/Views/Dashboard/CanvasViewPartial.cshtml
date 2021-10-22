@@ -1,17 +1,27 @@
-﻿@model WebApp.Models.PhotoDataModel
+﻿@model WebApp.Models.CanvasViewModel
+@using Newtonsoft.Json
+@using Newtonsoft.Json.Serialization
 
 @{
     Layout = null;
+
+    var serializeSetting = new JsonSerializerSettings
+    {
+        ContractResolver = new CamelCasePropertyNamesContractResolver()
+    };
 }
 <style>
-    #testCanvas {
-       /* border: 1px solid red;*/
-        background-image :url( @VirtualPathUtility.ToAbsolute(Model.ImageVirtualPath) );
+    #imgCanvas {
+        /* border: 1px solid red;*/
+        background-image: url( @VirtualPathUtility.ToAbsolute(Model.PhotoDataModel.ImageVirtualPath) );
         background-size: 640px 480px;
-        background-repeat:no-repeat;
+        background-repeat: no-repeat;
         margin: auto auto;
     }
 </style>
 <div>
-    <canvas id="testCanvas" width=640 height=480></canvas>
+    @Html.Hidden("BoundingBoxData", Model.BoundingBoxDataModels!=null? JsonConvert.SerializeObject(Model.BoundingBoxDataModels, serializeSetting):null)
+    @Html.Hidden("ClientSideBoundingBoxData")
+    @Html.Hidden("PhotoId", Model.PhotoDataModel.Id)
+    <canvas id="imgCanvas" width=640 height=480></canvas>
 </div>

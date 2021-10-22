@@ -9,7 +9,7 @@
               <tr>
                   <td> @Html.TextBoxFor(m => m.FileAttach, new { type = "file", accept = "image/x-png,image/jpg,image/jpeg", 
                       placeholder = Html.DisplayNameFor(m => m.FileAttach), @id = "formFile", @class = "form-control" })</td>
-                  <td><input type="submit" value="Upload" onclick="uploadFile()" class="btn btn-danger" /></td>
+                  <td><input type="submit" value="Upload" onclick="return uploadFile();" class="btn btn-danger" /></td>
               </tr>
           </table>
                 

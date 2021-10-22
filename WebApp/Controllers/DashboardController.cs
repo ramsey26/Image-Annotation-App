@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AutoMapper;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -7,6 +8,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
+using WebApp.DTOs;
 using WebApp.Helpers;
 using WebApp.Models;
 using WebApp.Services;
@@ -19,8 +21,9 @@ namespace WebApp.Controllers
         public const string DashboardForm = "DashboardForm";
         public const string UploadFileForm = "UploadFileForm";
         public const string SessionKeyUserData = "UserDashboardData";
+        public const string SessionKeyCanvasData = "CanvasData";
         public const string GeneratedImagesVirtualPath = "~/GeneratedImages/";
-
+        
         public UserSession _userSession = null;
         DashboardService dashboardService;
         public DashboardController()
@@ -32,18 +35,21 @@ namespace WebApp.Controllers
         public async Task<ActionResult> Dashboard()
         {
             MemberDataModel userData;
-            DashboardViewModel dashboardViewModel;
+            DashboardViewModel dashboardViewModel = new DashboardViewModel();
 
-            userData = await dashboardService.GetUserData();
+            userData = (MemberDataModel)Session[SessionKeyUserData];
 
-            dashboardViewModel = new DashboardViewModel();
-           
-            foreach(var image in userData.Photos)
+            if (userData==null)
             {
-                byte[] imageToWrite = Convert.FromBase64String(image.FileContent);
-                string strtest = Server.MapPath(GeneratedImagesVirtualPath);
+                userData = await dashboardService.GetUserData();
 
-                image.ImageVirtualPath = imageToWrite.WriteImageFile(strtest, GeneratedImagesVirtualPath, image.FileName);
+                foreach (var image in userData.Photos)
+                {
+                    byte[] imageToWrite = Convert.FromBase64String(image.FileContent);
+                    string strtest = Server.MapPath(GeneratedImagesVirtualPath);
+
+                    image.ImageVirtualPath = imageToWrite.WriteImageFile(strtest, GeneratedImagesVirtualPath, image.FileName);
+                }
             }
 
             dashboardViewModel.MemberDataModel = userData;
@@ -57,7 +63,7 @@ namespace WebApp.Controllers
         public async Task<ActionResult> UploadFile()
         {
             HttpPostedFileBase uploadedFile;
-          
+
             try
             {
                 if (Request.Files.Count == 0)
@@ -70,7 +76,7 @@ namespace WebApp.Controllers
 
                 string fileExt = Path.GetExtension(uploadedFile.FileName);
 
-                if (fileExt != ".jpeg" && fileExt != ".jpg" && fileExt!=".png")
+                if (fileExt != ".jpeg" && fileExt != ".jpg" && fileExt != ".png")
                 {
                     TempData["errorMessage"] = "Please choose a photo.";
                     return Json("Please choose an image file.");
@@ -87,9 +93,25 @@ namespace WebApp.Controllers
                     FileContentType = uploadedFile.ContentType
                 };
 
-                var isSuccess = await dashboardService.UploadPhotoData(photoDataModel);
-                if (isSuccess)
+                bool isFileUploadedSuccessfully = await dashboardService.UploadPhotoData(photoDataModel);
+                if (isFileUploadedSuccessfully)
                 {
+                    //get last uploaded photo
+                    var image = await dashboardService.GetLastPhotoData();
+
+                    //Convert byte array to photo
+                    byte[] imageToWrite = Convert.FromBase64String(image.FileContent);
+                    string strtest = Server.MapPath(GeneratedImagesVirtualPath);
+
+                    image.ImageVirtualPath = imageToWrite.WriteImageFile(strtest, GeneratedImagesVirtualPath, image.FileName);
+
+                    //Update Photo collection with new uploaded photo
+                    var userData = (MemberDataModel)Session[SessionKeyUserData];
+                    userData.Photos.Add(image);
+                   
+                     //Update Session data
+                     Session[SessionKeyUserData] = userData;
+
                     TempData["successMessage"] = "Photo uploaded successfully.";
                 }
             }
@@ -102,55 +124,65 @@ namespace WebApp.Controllers
             return Json("Photo uploaded Successfully.");
         }
 
-        /// <summary>  
-        /// GET: /Dashboard/DownloadFile  
-        /// </summary>  
-        /// <param name="fileId">File Id parameter</param>  
-        /// <returns>Return download file</returns>  
-        public ActionResult DownloadFile(int fileId)
-        {
-            var userData = (MemberDataModel)Session[SessionKeyUserData];
-
-            var fileInfo = userData.Photos.FirstOrDefault(x => x.Id == fileId);
-
-            return this.GetFile(fileInfo.FileContent, fileInfo.FileContentType);
-        }
-
         [HttpPost]
-        public ActionResult GenerateImgFile(int fileId)
+        public async Task<ActionResult> GetCanvasImage(int photoId)
         {
-            var userData = (MemberDataModel)Session[SessionKeyUserData];
-
-            var photoDataModel = userData.Photos.FirstOrDefault(x => x.Id == fileId);
-
-            return PartialView("CanvasViewPartial", photoDataModel);
-        }
-
-        /// <summary>  
-        /// Get file method.  
-        /// </summary>  
-        /// <param name="fileContent">File content parameter.</param>  
-        /// <param name="fileContentType">File content type parameter</param>  
-        /// <returns>Returns - File.</returns>  
-        private FileResult GetFile(string fileContent, string fileContentType)
-        {
-            // Initialization.  
-            FileResult file;
-
             try
             {
-                // Get file.  
-                byte[] byteContent = Convert.FromBase64String(fileContent);
-                file = this.File(byteContent, fileContentType);
+                var userData = (MemberDataModel)Session[SessionKeyUserData];
+                var photoDataModel = userData.Photos.FirstOrDefault(x => x.Id == photoId);
+
+                // var sessionCanvasBoxes = (List<BoundingBoxDataModel>)Session[SessionKeyCanvasData];
+
+                var boundingBoxDataModels = await dashboardService.GetBoxByPhotoId(photoId);
+                CanvasViewModel canvasViewModel = new CanvasViewModel()
+                {
+                    PhotoDataModel = photoDataModel,
+                    BoundingBoxDataModels = boundingBoxDataModels
+                };
+
+                return PartialView("CanvasViewPartial", canvasViewModel);
             }
             catch (Exception ex)
             {
-                // Info.  
-                throw ex;
+                throw new Exception(ex.Message);
+            }
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> SaveBoundingBoxData(IEnumerable<BoundingBoxDto> boundingBoxDtos, int photoId)
+        {
+            CanvasViewModel canvasViewModel = new CanvasViewModel();
+            try
+            {
+                var lsBoxData = Mapper.Map<IEnumerable<BoundingBoxDto>, List<BoundingBoxDataModel>>(boundingBoxDtos);
+
+                //Remove all the items where Id is null becuase they are old boxes.
+                lsBoxData.RemoveAll(x => x.Id != null);
+
+                bool isSaved = await dashboardService.SaveBoundingBoxData(lsBoxData);
+
+                //If saved, fetch added all the boxes by PhotoId and Update Session data
+                if (isSaved)
+                {
+                   var boundingBoxDataModels = await dashboardService.GetBoxByPhotoId(photoId);
+
+                    var userData = (MemberDataModel)Session[SessionKeyUserData];
+                    var photoDataModel = userData.Photos.FirstOrDefault(x => x.Id == photoId);
+                  
+                    canvasViewModel.PhotoDataModel = photoDataModel;
+                    canvasViewModel.BoundingBoxDataModels = boundingBoxDataModels;
+
+                  //  Session[SessionKeyCanvasData] = boundingBoxDataModels;
+                }
+
+                return PartialView("CanvasViewPartial", canvasViewModel);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
             }
 
-            // info.  
-            return file;
         }
     }
 }

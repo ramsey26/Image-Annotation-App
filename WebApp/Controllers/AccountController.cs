@@ -24,7 +24,8 @@ namespace WebApp.Controllers
        // [ValidateAntiForgeryToken]
         public ActionResult LogOff()
         {
-            Session.Remove(JwtBearerToken);
+            //Session.Remove(JwtBearerToken);
+            Session.RemoveAll();
             Request.GetOwinContext().Authentication.SignOut("ApplicationCookie");
             return RedirectToAction("Login", "Account");
         }

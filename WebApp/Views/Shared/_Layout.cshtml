@@ -6,16 +6,16 @@
     <title>@ViewBag.Title - My ASP.NET Application</title>
     @Styles.Render("~/Content/css")
     @Scripts.Render("~/bundles/modernizr")
-    @Html.Hidden("ErrorMessage", TempData["errorMessage"]);
-    @Html.Hidden("SuccessMessage", TempData["successMessage"]);
+    @Html.Hidden("ErrorMessage", TempData["errorMessage"])
+    @Html.Hidden("SuccessMessage", TempData["successMessage"])
 
-    <style>
+<style>
         .footer {
             position: fixed;
             left: 0;
             bottom: 0;
             width: 100%;
-            background-color:lightslategray;
+            background-color: lightslategray;
             color: white;
             text-align: center;
         }
@@ -24,17 +24,18 @@
             font-family: Verdana;
             font-size: small;
         }
-    </style>
-
-    @*<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>*@
+</style>
+  
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.css">
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
-    @*<link href="~/Content/bootstrap.min.css" rel="stylesheet" />*@
+    <link href="~/content/bootstrap.min.css" rel="stylesheet" />
     <link href="@Url.Content("~/Content/Gridmvc.css")" rel="stylesheet" />
-    <script src="@Url.Content("~/Scripts/jquery-3.4.1.min.js")"></script>
+    @*<script src="@Url.Content("~/Scripts/jquery-3.4.1.min.js")"></script>*@
     <script src="@Url.Content("~/Scripts/gridmvc.min.js")"></script>
     @*<link href="~/Content/bootstrap-theme.css" rel="stylesheet" />*@
+
     <script type="text/javascript">
 
         function showToastr() {
@@ -46,7 +47,7 @@
                     "positionClass": "toast-bottom-right",
                     "onclick": null,
                     "fadeIn": 300,
-                    "fadeOut": 100,
+                    "fadeOut": 200,
                     "timeOut": 3000,
                     "extendedTimeOut": 1000
                 }
@@ -83,7 +84,7 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                @Html.ActionLink("Image Annotation", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
+                @Html.ActionLink("Image-Annotation", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
             </div>
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">

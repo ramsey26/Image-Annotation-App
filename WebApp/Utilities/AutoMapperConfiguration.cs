@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using WebApp.DTOs;
 using WebApp.Models;
 
 namespace WebApp.Utilities
@@ -15,8 +16,9 @@ namespace WebApp.Utilities
             Mapper.Initialize(x =>
             {
                 x.CreateMap<RegisterViewModel, RegisterDataModel>();
+                x.CreateMap<BoundingBoxDto, BoundingBoxDataModel>();
             });
-
+          
         }
     }
 }

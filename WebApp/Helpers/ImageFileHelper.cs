@@ -11,16 +11,18 @@ namespace WebApp.Helpers
         {
             string fileName = baseFileName;
             string fullFileName = currentservermainpath + fileName;
-           
+
+            if ((System.IO.File.Exists(fullFileName) == false))
+            {
                 try
                 {
                     System.IO.File.WriteAllBytes(fullFileName, image);
                 }
                 catch (Exception ex)
                 {
-                throw ex;
+                    throw ex;
                 }
-           
+            }
             return (baseDirectoryVirtual + fileName);
         }
     }

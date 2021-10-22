@@ -8,15 +8,29 @@
     Layout = null;
 }
 <style>
-    .grid-header {
-      
+    .grid-Container{
+        position:relative;
+        width:100%;
+        height:100%;
+    }
+    .grid-header-title {
+        background: floralwhite;
+        text-align: center;
+    }
+    .grid-header-title a{
+        color:black;
     }
     .grid-row {
         border: 2px solid green;
     }
+    .grid-footer{
+        position:absolute;
+        bottom:0px;
+        left:5px;
+    }
 </style>
 
-<div class="code-cut" >
+<div class="code-cut grid-Container" >
     @Html.Grid(Model).Columns(columns =>
 {
 columns.Add(c => c.Id).Titled("File ID").Filterable(false);
@@ -30,11 +44,11 @@ columns.Add(c => c.FileName).Titled("FileName").Filterable(true)
 columns.Add().Titled("Image Preview")
 .Encoded(false)
 .Sanitized(false)
-.SetWidth(100)
-.RenderValueAs(c => @<div style="width:100px;">
+.SetWidth(70)
+.RenderValueAs(c => @<div style="width: 70px; cursor: pointer;">
     @*<img alt="Image" src='@Url.Action("DownloadFile", "Dashboard", new { fileId = c.Id })' width="100" height="100" />*@
-    <img alt="Image" src=@VirtualPathUtility.ToAbsolute(c.ImageVirtualPath) width="100" height="100" />
+    <img alt="Image" src=@VirtualPathUtility.ToAbsolute(c.ImageVirtualPath) onclick='openImageInCanvas("@c.Id")' width="70" height="70" />
 </div>);
 
-}).WithPaging(10).Sortable(true).Selectable(true).Named("photoGridView")
+}).WithPaging(5).Sortable(true).Selectable(true).Named("photoGridView")
 </div>
