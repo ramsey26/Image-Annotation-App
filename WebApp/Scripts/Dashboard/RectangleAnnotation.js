@@ -14,9 +14,18 @@ let offsetYResult;
 let offsetX;
 let offsetY;
 var $canvas = "";
+var removedBoxes = [];
+
+var polygonFlag = false;
+
+const AddAct = "A";
+const EditAct = "E";
+const DeleteAct = "D";
+
+var selectedBoxIndex = -1;
 
 class Box {
-    constructor(id, x1, x2, y1, y2, angle, boundingBoxNumber, photoId) {
+    constructor(id, x1, x2, y1, y2, angle, boundingBoxNumber, photoId, action) {
         this.id = id;
         this.x1 = x1;
         this.x2 = x2;
@@ -28,7 +37,8 @@ class Box {
         this.height = this.y2 - this.y1;
         this.xCenter = this.x1 + (this.width) / 2;
         this.yCenter = this.y1 + (this.height) / 2;
-        this.photoId = photoId
+        this.photoId = photoId;
+        this.action = action;
     }
 
     doesBoxAreaExists() {
@@ -90,6 +100,10 @@ class Box {
     }
 
     rotateBox() {
+        if (this.id != null) {
+          UpdateBoxEditAction();
+        }
+        
         // first save the untranslated/unrotated context
         ctx.save();
 
@@ -143,51 +157,52 @@ class Canvas {
     getSelectedBox() {
         var i = clickedArea.box;
         return new Box(boxes[i].id, boxes[i].x1, boxes[i].x2, boxes[i].y1, boxes[i].y2,
-            boxes[i].angle, boxes[i].boundingBoxNumber, boxes[i].photoId);
+            boxes[i].angle, boxes[i].boundingBoxNumber, boxes[i].photoId, boxes[i].action);
     }
 
     findCurrentArea() {
         for (var i = 0; i < boxes.length; i++) {
-            var box = new Box(boxes[i].id, boxes[i].x1, boxes[i].x2, boxes[i].y1, boxes[i].y2, boxes[i].angle, boxes[i].boundingBoxNumber, boxes[i].photoId);
+            var box = new Box(boxes[i].id, boxes[i].x1, boxes[i].x2, boxes[i].y1, boxes[i].y2, boxes[i].angle, boxes[i].boundingBoxNumber, boxes[i].photoId, boxes[i].action);
             var xCenter = box.xCenter;
             var yCenter = box.yCenter;
-
-            if (box.angle == null) {
-                if (box.x1 - lineOffset < this.startX && this.startX < box.x1 + lineOffset) {
-                    if (box.y1 - lineOffset < this.startY && this.startY < box.y1 + lineOffset) {
-                        return { box: i, pos: 'tl' };    //tl : top left
-                    } else if (box.y2 - lineOffset < this.startY && this.startY < box.y2 + lineOffset) {
-                        return { box: i, pos: 'bl' };       //bl : bottom left
-                    } else if (yCenter - lineOffset < this.startY && this.startY < yCenter + lineOffset) {
-                        return { box: i, pos: 'l' };    //l : left
+          
+                if (box.angle == null) {
+                    if (box.x1 - lineOffset < this.startX && this.startX < box.x1 + lineOffset) {
+                        if (box.y1 - lineOffset < this.startY && this.startY < box.y1 + lineOffset) {
+                            return { box: i, pos: 'tl' };    //tl : top left
+                        } else if (box.y2 - lineOffset < this.startY && this.startY < box.y2 + lineOffset) {
+                            return { box: i, pos: 'bl' };       //bl : bottom left
+                        } else if (yCenter - lineOffset < this.startY && this.startY < yCenter + lineOffset) {
+                            return { box: i, pos: 'l' };    //l : left
+                        }
+                    } else if (box.x2 - lineOffset < this.startX && this.startX < box.x2 + lineOffset) {
+                        if (box.y1 - lineOffset < this.startY && this.startY < box.y1 + lineOffset) {
+                            return { box: i, pos: 'tr' };   //tr : top right
+                        } else if (box.y2 - lineOffset < this.startY && this.startY < box.y2 + lineOffset) {
+                            return { box: i, pos: 'br' };   //br : bottom right
+                        } else if (yCenter - lineOffset < this.startY && this.startY < yCenter + lineOffset) {
+                            return { box: i, pos: 'r' };    //r : right
+                        }
                     }
-                } else if (box.x2 - lineOffset < this.startX && this.startX < box.x2 + lineOffset) {
-                    if (box.y1 - lineOffset < this.startY && this.startY < box.y1 + lineOffset) {
-                        return { box: i, pos: 'tr' };   //tr : top right
-                    } else if (box.y2 - lineOffset < this.startY && this.startY < box.y2 + lineOffset) {
-                        return { box: i, pos: 'br' };   //br : bottom right
-                    } else if (yCenter - lineOffset < this.startY && this.startY < yCenter + lineOffset) {
-                        return { box: i, pos: 'r' };    //r : right
+                    else if (isPointInsideCircle(2 * lineOffset, this.startX, this.startY, xCenter, box.y1 - 20)) {
+                        return { box: i, pos: 'c' } //Position inside circle
+                    }
+                    else if (xCenter - lineOffset < this.startX && this.startX < xCenter + lineOffset) {
+                        //if (box.y1 - lineOffset < y && y < box.y1 + lineOffset) {
+                        //    return { box: i, pos: 't' };    //t : top
+                        //}
+                        if (box.y2 - lineOffset < this.startY && this.startY < box.y2 + lineOffset) {
+                            return { box: i, pos: 'b' };    //b : bottom
+                        } else if (box.y1 - lineOffset < this.startY && this.startY < box.y2 + lineOffset) {
+                            return { box: i, pos: 'i' };    //i : inside 
+                        }
+                    } else if (box.x1 - lineOffset < this.startX && this.startX < box.x2 + lineOffset) {
+                        if (box.y1 - lineOffset < this.startY && this.startY < box.y2 + lineOffset) {
+                            return { box: i, pos: 'i' };
+                        }
                     }
                 }
-                else if (isPointInsideCircle(2 * lineOffset, this.startX, this.startY, xCenter, box.y1 - 20)) {
-                    return { box: i, pos: 'c' } //Position inside circle
-                }
-                else if (xCenter - lineOffset < this.startX && this.startX < xCenter + lineOffset) {
-                    //if (box.y1 - lineOffset < y && y < box.y1 + lineOffset) {
-                    //    return { box: i, pos: 't' };    //t : top
-                    //}
-                    if (box.y2 - lineOffset < this.startY && this.startY < box.y2 + lineOffset) {
-                        return { box: i, pos: 'b' };    //b : bottom
-                    } else if (box.y1 - lineOffset < this.startY && this.startY < box.y2 + lineOffset) {
-                        return { box: i, pos: 'i' };    //i : inside 
-                    }
-                } else if (box.x1 - lineOffset < this.startX && this.startX < box.x2 + lineOffset) {
-                    if (box.y1 - lineOffset < this.startY && this.startY < box.y2 + lineOffset) {
-                        return { box: i, pos: 'i' };
-                    }
-                }
-            }
+            
         }
         return { box: -1, pos: 'o' };   //o : outside
     }
@@ -195,19 +210,20 @@ class Canvas {
     findCurrentAreaForRotatedRect() {
         for (var i = 0; i < boxes.length; i++) {
             let box = boxes[i];
+          
+                if (box.angle != null) {
+                    // Check relative to center of rectangle
+                    //if (x2 > -0.5 * w && x2 < 0.5 * w && y2 > -0.5 * h && y2 < 0.5 * h) {
+                    //    return { box: i, pos: 'i' } //Position inside rotated rectangle
+                    //}
+                    var rotatedPoints = this.getRotatedPoints(box);
+                    var result = findCurrentRotatedArea(i, rotatedPoints.rotatedX, rotatedPoints.rotatedY);
 
-            if (box.angle != null) {
-                // Check relative to center of rectangle
-                //if (x2 > -0.5 * w && x2 < 0.5 * w && y2 > -0.5 * h && y2 < 0.5 * h) {
-                //    return { box: i, pos: 'i' } //Position inside rotated rectangle
-                //}
-                var rotatedPoints = this.getRotatedPoints(box);
-                var result = findCurrentRotatedArea(i, rotatedPoints.rotatedX, rotatedPoints.rotatedY);
-
-                if (result != null) {
-                    return result;
+                    if (result != null) {
+                        return result;
+                    }
                 }
-            }
+            
         }
         return { box: -1, pos: 'o' };   //o : outside
     }
@@ -245,16 +261,18 @@ class Canvas {
         for (var i = 0; i < boxes.length; i++) {
 
             let box = new Box(boxes[i].id, boxes[i].x1, boxes[i].x2, boxes[i].y1, boxes[i].y2,
-                boxes[i].angle, boxes[i].boundingBoxNumber, boxes[i].photoId);
+                boxes[i].angle, boxes[i].boundingBoxNumber, boxes[i].photoId, boxes[i].action);
 
-            box.drawBoxOn();
+                box.drawBoxOn();
+            
            // drawBoxOn(boxes[i], ctx);
             // ctx.closePath();
         }
+
         if (clickedArea.box != -1) {
             var i = clickedArea.box;
             let selectedBox = new Box(boxes[i].id, boxes[i].x1, boxes[i].x2, boxes[i].y1, boxes[i].y2,
-                boxes[i].angle, boxes[i].boundingBoxNumber, boxes[i].photoId);
+                boxes[i].angle, boxes[i].boundingBoxNumber, boxes[i].photoId, boxes[i].action);
 
             if (selectedBox.angle != null) {
                 selectedBox.rotateBox();
@@ -301,10 +319,16 @@ function handleMouseDown(e) {
     clickedArea = iCanvas.findCurrentArea();
 
     if (clickedArea.box == -1) {
+        selectedBoxIndex = -1;
         clickedArea = iCanvas.findCurrentAreaForRotatedRect();
     }
 
     if (clickedArea.box != -1) {
+
+        $("#btnDelete").removeClass("disabled");
+      
+
+        selectedBoxIndex = clickedArea.box;
         iCanvas.redraw();
 
         let selectedBox = iCanvas.getSelectedBox();
@@ -316,6 +340,7 @@ function handleMouseDown(e) {
         }
     }
     else {
+        $("#btnDelete").addClass("disabled");
         iCanvas.redraw();
     }
 }
@@ -326,6 +351,8 @@ function handleMouseUp(e) {
         if (tmpBox.doesBoxAreaExists()) {
             boxes.push(tmpBox);
             updateHiddenFieldFromBoxes();
+
+           
            // iCanvas.redraw();
         }
         else {
@@ -336,6 +363,8 @@ function handleMouseUp(e) {
 
     }
     else if (clickedArea.box != -1) {
+
+      
         var selectedBox = iCanvas.getSelectedBox();
         if (selectedBox.x1 > selectedBox.x2) {
             var previousX1 = selectedBox.x1;
@@ -391,6 +420,7 @@ function handleMouseOut(e) {
         checkBoxExistAndOverlap(selectedBox);
     }
 
+    iCanvas = new Canvas(-1, -1, -1, -1);
     mousedown = false;
     clickedArea = { box: -1, pos: 'o' };
     tmpBox = null;
@@ -403,6 +433,9 @@ function handleMouseMove(e) {
         iCanvas.redraw();
     }
     else if (mousedown && clickedArea.box != -1) {
+
+        UpdateBoxEditAction();
+
         let box = iCanvas.getSelectedBox();
         xOffset = iCanvas.endX - iCanvas.startX;
         yOffset = iCanvas.endY - iCanvas.startY;
@@ -524,6 +557,18 @@ function handleMouseMove(e) {
     }
 }
 
+function UpdateBoxEditAction() {
+
+    if (clickedArea.box != -1) {
+        var box = boxes[clickedArea.box];
+
+        if (box.id != null) {
+            box.action = EditAct; //Edit = "E"
+            boxes[clickedArea.box] = box;
+        }
+    }
+}
+
 function updateAngleInBox(box) {
     var getItemIndex = function (item) {
         return item.boundingBoxNumber == box.boundingBoxNumber;
@@ -598,10 +643,11 @@ function newBox(x1, y1, x2, y2) {
     var len = boxes.length;
     // var defaultColor = colorPicker.GetValue();
     var photoId = $("#PhotoId").val();
-    var prevBoxNo = len == 0 ? 0 : boxes[len - 1].boundingBoxNumber;
 
+    var prevBoxNo = len == 0 ? 0 : boxes[len - 1].boundingBoxNumber;
+   
     if (boxX2 - boxX1 > lineOffset * 2 && boxY2 - boxY1 > lineOffset * 2) {
-        var newBox = new Box(null, boxX1, boxX2, boxY1, boxY2, null, (prevBoxNo + 1), photoId);
+        var newBox = new Box(null, boxX1, boxX2, boxY1, boxY2, null, (prevBoxNo + 1), photoId, AddAct); //Add = "A"
 
         if (!willRectangleOverlap(newBox)) {
             return newBox;
@@ -732,43 +778,42 @@ function willRectangleOverlap(rect) {
     }
 
     for (var i = 0; i < boxes.length; i++) {
-        var rectB = [];
+            var rectB = [];
 
-        if (boxes[i].angle != null && boxes[i].angle != 0) {
-            var pb1 = getPointsAfterRotation(boxes[i].x1, boxes[i].y1, boxes[i]);
-            var pb2 = getPointsAfterRotation(boxes[i].x2, boxes[i].y1, boxes[i]);
-            var pb3 = getPointsAfterRotation(boxes[i].x2, boxes[i].y2, boxes[i]);
-            var pb4 = getPointsAfterRotation(boxes[i].x1, boxes[i].y2, boxes[i]);
+            if (boxes[i].angle != null && boxes[i].angle != 0) {
+                var pb1 = getPointsAfterRotation(boxes[i].x1, boxes[i].y1, boxes[i]);
+                var pb2 = getPointsAfterRotation(boxes[i].x2, boxes[i].y1, boxes[i]);
+                var pb3 = getPointsAfterRotation(boxes[i].x2, boxes[i].y2, boxes[i]);
+                var pb4 = getPointsAfterRotation(boxes[i].x1, boxes[i].y2, boxes[i]);
 
-            rectB = [
-                new rectN(pb1),
-                new rectN(pb2),
-                new rectN(pb3),
-                new rectN(pb4)
-            ]
-        }
-        else {
-            var pb1 = { x: boxes[i].x1, y: boxes[i].y1 };
-            var pb2 = { x: boxes[i].x2, y: boxes[i].y1 };
-            var pb3 = { x: boxes[i].x2, y: boxes[i].y2 };
-            var pb4 = { x: boxes[i].x1, y: boxes[i].y2 };
-
-            rectB = [
-                new rectN(pb1),
-                new rectN(pb2),
-                new rectN(pb3),
-                new rectN(pb4)
-            ]
-        }
-
-        var overlapping = doPolygonsIntersect(rectA, rectB);
-
-        if (boxes[i].boundingBoxNumber != rect.boundingBoxNumber) {
-            if (overlapping) {
-                return true;
+                rectB = [
+                    new rectN(pb1),
+                    new rectN(pb2),
+                    new rectN(pb3),
+                    new rectN(pb4)
+                ]
             }
-        }
+            else {
+                var pb1 = { x: boxes[i].x1, y: boxes[i].y1 };
+                var pb2 = { x: boxes[i].x2, y: boxes[i].y1 };
+                var pb3 = { x: boxes[i].x2, y: boxes[i].y2 };
+                var pb4 = { x: boxes[i].x1, y: boxes[i].y2 };
 
+                rectB = [
+                    new rectN(pb1),
+                    new rectN(pb2),
+                    new rectN(pb3),
+                    new rectN(pb4)
+                ]
+            }
+            var overlapping = doPolygonsIntersect(rectA, rectB);
+
+            if (boxes[i].boundingBoxNumber != rect.boundingBoxNumber) {
+                if (overlapping) {
+                    return true;
+                }
+            }
+        
     }
     return false;
 }
@@ -809,14 +854,14 @@ function checkBoxExistAndOverlap(selectedBox) {
         isOverlap = willRectangleOverlap(selectedBox);
 
         if (isOverlap) {
-            var initialBoxes = $("#ClientSideBoundingBoxData").val();
+            var initialBoxes = $("#ClientSideBoundingBoxData").val() != "" ? $("#ClientSideBoundingBoxData").val() : $("#BoundingBoxData").val();
             boxes = JSON.parse(initialBoxes) == null ? [] : JSON.parse(initialBoxes);
 
             iCanvas.redraw();
         }
         else {
            // setActionFlagOnBox(clickedArea.box, actUpdate);
-            updateHiddenFieldFromBoxes();
+            updateHiddenFieldFromBoxes();             
             // saveChangesToServer("E");
         }
     }
@@ -827,14 +872,14 @@ function updateHiddenFieldFromBoxes() {
     var jsonStr = boxes.length > 0 ? JSON.stringify(boxes) : "";
     $("#ClientSideBoundingBoxData").val(jsonStr);
 
-    ////Enable and disable save button by comparing server and client side changes 
-    ////if both are equal then no need to enable button but if there are changes then enable it.
-    //if (!isServerAndClientSideChangesEqual()) {
-    //    btnSaveAnnotations.SetEnabled(true);
-    //}
-    //else {
-    //    btnSaveAnnotations.SetEnabled(false);
-    //}
+    //Enable and disable save button by comparing server and client side changes 
+    //if both are equal then no need to enable button but if there are changes then enable it.
+    if (!isServerAndClientSideChangesEqual()) {
+        $("#btnSave").removeClass("disabled");
+    }
+    else {
+        $("#btnSave").addClass("disabled");
+    }
 
     ////If the textArea field contains value then enable delete all button 
     ////if it does not contain any value then disable it 

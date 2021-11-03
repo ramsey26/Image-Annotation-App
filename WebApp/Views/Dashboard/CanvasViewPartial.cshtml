@@ -19,8 +19,13 @@
         margin: auto auto;
     }
 </style>
+<script>
+    //$(document).ready(function () {
+    //    downloadLnk.addEventListener('click', download, false);
+    //});
+</script>
 <div>
-    @Html.Hidden("BoundingBoxData", Model.BoundingBoxDataModels!=null? JsonConvert.SerializeObject(Model.BoundingBoxDataModels, serializeSetting):null)
+    @Html.Hidden("BoundingBoxData", Model.BoundingBoxDataModels != null ? JsonConvert.SerializeObject(Model.BoundingBoxDataModels, serializeSetting) : null)
     @Html.Hidden("ClientSideBoundingBoxData")
     @Html.Hidden("PhotoId", Model.PhotoDataModel.Id)
     <canvas id="imgCanvas" width=640 height=480></canvas>

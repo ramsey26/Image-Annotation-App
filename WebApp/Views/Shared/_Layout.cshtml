@@ -9,23 +9,24 @@
     @Html.Hidden("ErrorMessage", TempData["errorMessage"])
     @Html.Hidden("SuccessMessage", TempData["successMessage"])
 
-<style>
+    <style>
         .footer {
             position: fixed;
             left: 0;
             bottom: 0;
             width: 100%;
-            background-color: lightslategray;
+            background-color: darkslategrey;
             color: white;
-            text-align: center;
+            text-align: right;
+            padding-right: 20px;
         }
 
         body {
             font-family: Verdana;
             font-size: small;
         }
-</style>
-  
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.css">
@@ -35,6 +36,9 @@
     @*<script src="@Url.Content("~/Scripts/jquery-3.4.1.min.js")"></script>*@
     <script src="@Url.Content("~/Scripts/gridmvc.min.js")"></script>
     @*<link href="~/Content/bootstrap-theme.css" rel="stylesheet" />*@
+
+    <script src="~/Scripts/Dashboard/Dashboard.js"></script>
+    <script src="~/Scripts/Dashboard/RectangleAnnotation.js"></script>
 
     <script type="text/javascript">
 
@@ -75,7 +79,7 @@
     </script>
 
 </head>
-<body>
+<body style="background-color: currentColor;">
     <div class="navbar navbar-inverse navbar-fixed-top">
         <div class="container">
             <div class="navbar-header">
@@ -102,7 +106,7 @@
         @RenderBody()
     </div>
     <div class="footer">
-            <p>&copy; @DateTime.Now.Year - My ASP.NET Application</p>
+            <p>&copy; @DateTime.Now.Year - Developed by Vyas</p>
         </div>
 
     @Scripts.Render("~/bundles/jquery")

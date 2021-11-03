@@ -113,7 +113,7 @@ namespace WebApp.Controllers
                 var claims = new[]
                 {
                     new Claim(ClaimTypes.Name,userDto.Username),
-                    new Claim("AcessToken",string.Format("Bearer {0}",userDto.Token)),
+                   new Claim("AcessToken",userDto.Token),
                     new Claim(ClaimTypes.NameIdentifier,userDto.Username),
                     new Claim(ClaimTypes.X500DistinguishedName,"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")
                 };

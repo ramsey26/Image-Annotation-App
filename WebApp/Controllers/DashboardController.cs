@@ -60,15 +60,15 @@ namespace WebApp.Controllers
         }
 
         [HttpPost]
+        [ActionName("UploadFile")]
         public async Task<ActionResult> UploadFile()
         {
             HttpPostedFileBase uploadedFile;
-
+            List<PhotoDataModel> photoDataModels = new List<PhotoDataModel>();
             try
             {
                 if (Request.Files.Count == 0)
                 {
-                    TempData["errorMessage"] = "Please choose a Photo.";
                     return Json("Please choose a Photo.");
                 }
 
@@ -78,7 +78,6 @@ namespace WebApp.Controllers
 
                 if (fileExt != ".jpeg" && fileExt != ".jpg" && fileExt != ".png")
                 {
-                    TempData["errorMessage"] = "Please choose a photo.";
                     return Json("Please choose an image file.");
                 }
 
@@ -108,20 +107,19 @@ namespace WebApp.Controllers
                     //Update Photo collection with new uploaded photo
                     var userData = (MemberDataModel)Session[SessionKeyUserData];
                     userData.Photos.Add(image);
-                   
+
+                    photoDataModels = userData.Photos;
                      //Update Session data
                      Session[SessionKeyUserData] = userData;
-
-                    TempData["successMessage"] = "Photo uploaded successfully.";
                 }
             }
             catch (Exception ex)
             {
-                TempData["errorMessage"] = "Error while uploading file.";
                 return Json(ex.Message);
             }
 
-            return Json("Photo uploaded Successfully.");
+            return PartialView("GridViewPartial", photoDataModels);
+           // return Json("Photo uploaded Successfully.");
         }
 
         [HttpPost]
@@ -150,15 +148,15 @@ namespace WebApp.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> SaveBoundingBoxData(IEnumerable<BoundingBoxDto> boundingBoxDtos, int photoId)
+        public async Task<ActionResult> SaveBoundingBoxData(List<BoundingBoxDto> boundingBoxDtos, int photoId)
         {
             CanvasViewModel canvasViewModel = new CanvasViewModel();
             try
             {
                 var lsBoxData = Mapper.Map<IEnumerable<BoundingBoxDto>, List<BoundingBoxDataModel>>(boundingBoxDtos);
 
-                //Remove all the items where Id is null becuase they are old boxes.
-                lsBoxData.RemoveAll(x => x.Id != null);
+                //Remove all those boxes where action is null becuase there is no action performed against that box.
+                lsBoxData.RemoveAll(x => x.Action == null);
 
                 bool isSaved = await dashboardService.SaveBoundingBoxData(lsBoxData);
 
@@ -183,6 +181,26 @@ namespace WebApp.Controllers
                 throw new Exception(ex.Message);
             }
 
+        }
+
+        [HttpPost]
+        public ActionResult GetGridViewData()
+        {
+            try
+            {
+                var userData = (MemberDataModel)Session[SessionKeyUserData];
+                List<PhotoDataModel> photoDataModel = new List<PhotoDataModel>();
+
+                if (userData.Photos.Count != 0)
+                {
+                    photoDataModel = userData.Photos.ToList();
+                }
+                return PartialView("GridViewPartial", photoDataModel);
+            }
+            catch(Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
         }
     }
 }

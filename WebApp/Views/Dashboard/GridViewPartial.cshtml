@@ -8,20 +8,21 @@
     Layout = null;
 }
 <style>
-    .grid-Container{
-        position:relative;
-        width:100%;
-        height:100%;
+    .grid-Container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        background-color: gainsboro;
     }
     .grid-header-title {
-        background: floralwhite;
+        background: darkgray;
         text-align: center;
     }
     .grid-header-title a{
         color:black;
     }
     .grid-row {
-        border: 2px solid green;
+        border: 1px solid currentColor;
     }
     .grid-footer{
         position:absolute;
@@ -35,7 +36,7 @@
 {
 columns.Add(c => c.Id).Titled("File ID").Filterable(false);
 
-columns.Add(c => c.FileName).Titled("FileName").Filterable(true)
+columns.Add(c => c.FileName).Titled("File Name").Filterable(true)
 .Encoded(false)
 .Sanitized(false)
 .RenderValueAs(c =>@<a class="download-file1" style="cursor:pointer;" onclick='openImageInCanvas("@c.Id")'>

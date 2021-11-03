@@ -31,7 +31,6 @@ namespace WebApp.Services
                 if (resp.IsSuccessStatusCode)
                 {
                     memberDataModel = await resp.Content.ReadAsAsync<MemberDataModel>();
-
                 }
             }
             catch(Exception ex)
@@ -64,7 +63,7 @@ namespace WebApp.Services
         {
             try
             {
-                HttpResponseMessage resp = await client.PostAsJsonAsync("api/BoundingBox/add-box", boundingBoxDataModel);
+                HttpResponseMessage resp = await client.PostAsJsonAsync("api/BoundingBox/save-box", boundingBoxDataModel);
                 resp.EnsureSuccessStatusCode();
 
                 if (!resp.IsSuccessStatusCode)

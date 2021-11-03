@@ -19,5 +19,6 @@ namespace WebApp.DTOs
         public decimal XCenter { get; set; }
         public decimal YCenter { get; set; }
         public int PhotoId { get; set; }
+        public string Action { get; set; }
     }
 }
