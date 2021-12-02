@@ -68,6 +68,7 @@
     @Html.Hidden("UploadFileUrl", Url.Action("UploadFile", "Dashboard"))
     @Html.Hidden("ImageFileUrl", Url.Action("GetCanvasImage", "Dashboard"))
     @Html.Hidden("SaveBoundingBoxUrl", Url.Action("SaveBoundingBoxData", "Dashboard"))
+    @Html.Hidden("SavePolygonUrl",Url.Action("SavePolygonData","Dashboard"))
 
     <div style="margin-top:10px;">
         @if (Model.MemberDataModel.UserName != null)

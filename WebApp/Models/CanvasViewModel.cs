@@ -12,11 +12,12 @@ namespace WebApp.Models
         {
             PhotoDataModel = new PhotoDataModel();
             BoundingBoxDataModels = new List<BoundingBoxDataModel>();
+            PolygonDataModels = new List<PolygonDataModel>();
         }
 
         public PhotoDataModel PhotoDataModel { get; set; }
         public List<BoundingBoxDataModel> BoundingBoxDataModels { get; set; }
 
-
+        public List<PolygonDataModel> PolygonDataModels {get; set; }
     }
 }

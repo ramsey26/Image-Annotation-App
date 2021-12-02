@@ -133,10 +133,13 @@ namespace WebApp.Controllers
                 // var sessionCanvasBoxes = (List<BoundingBoxDataModel>)Session[SessionKeyCanvasData];
 
                 var boundingBoxDataModels = await dashboardService.GetBoxByPhotoId(photoId);
+                var polygonDataModels = await dashboardService.GetPolygonsByPhotoId(photoId);
+
                 CanvasViewModel canvasViewModel = new CanvasViewModel()
                 {
                     PhotoDataModel = photoDataModel,
-                    BoundingBoxDataModels = boundingBoxDataModels
+                    BoundingBoxDataModels = boundingBoxDataModels,
+                    PolygonDataModels = polygonDataModels
                 };
 
                 return PartialView("CanvasViewPartial", canvasViewModel);
@@ -163,15 +166,17 @@ namespace WebApp.Controllers
                 //If saved, fetch added all the boxes by PhotoId and Update Session data
                 if (isSaved)
                 {
-                   var boundingBoxDataModels = await dashboardService.GetBoxByPhotoId(photoId);
+                    var boundingBoxDataModels = await dashboardService.GetBoxByPhotoId(photoId);
+                    var polygonDataModels = await dashboardService.GetPolygonsByPhotoId(photoId);
 
                     var userData = (MemberDataModel)Session[SessionKeyUserData];
                     var photoDataModel = userData.Photos.FirstOrDefault(x => x.Id == photoId);
-                  
+
                     canvasViewModel.PhotoDataModel = photoDataModel;
                     canvasViewModel.BoundingBoxDataModels = boundingBoxDataModels;
+                    canvasViewModel.PolygonDataModels = polygonDataModels;
 
-                  //  Session[SessionKeyCanvasData] = boundingBoxDataModels;
+                    //  Session[SessionKeyCanvasData] = boundingBoxDataModels;
                 }
 
                 return PartialView("CanvasViewPartial", canvasViewModel);
@@ -180,7 +185,35 @@ namespace WebApp.Controllers
             {
                 throw new Exception(ex.Message);
             }
+        }
+        
+        [HttpPost]
+        public async Task<ActionResult> SavePolygonData(List<PolygonDataModel> polygonData, int photoId)
+        {
+            CanvasViewModel canvasViewModel = new CanvasViewModel();
+            try
+            {
+                polygonData.RemoveAll(x => x.Action == null);
 
+                bool isSaved = await dashboardService.SavePolygonData(polygonData);
+
+                var polygonDataModels = await dashboardService.GetPolygonsByPhotoId(photoId);
+                var boundingBoxDataModels = await dashboardService.GetBoxByPhotoId(photoId);
+
+                var userData = (MemberDataModel)Session[SessionKeyUserData];
+                var photoDataModel = userData.Photos.FirstOrDefault(x => x.Id == photoId);
+
+                canvasViewModel.PhotoDataModel = photoDataModel;
+                canvasViewModel.BoundingBoxDataModels = boundingBoxDataModels;
+                canvasViewModel.PolygonDataModels = polygonDataModels;
+
+                return PartialView("CanvasViewPartial", canvasViewModel);
+
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
         }
 
         [HttpPost]

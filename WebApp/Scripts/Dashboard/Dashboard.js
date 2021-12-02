@@ -133,28 +133,57 @@ function ShowAjaxFailMessage(callResult, baseMessage) {
     alert(info);
 }
 
-function InitializeRectangleAnnotation() {
+function listenMouseEvents() {
+    // listen for mouse events
+    $("#imgCanvas").mousedown(function (e) {
+        if (polygonFlag) {
+            handleMouseDownPolygon(e);
+        }
+        else {
+            handleMouseDown(e);
+        }
 
+    });
+    $("#imgCanvas").mousemove(function (e) {
+        if (polygonFlag) {
+            handleMouseMovePolygon(e);
+        }
+        else {
+            handleMouseMove(e);
+        }
+
+    });
+    $("#imgCanvas").mouseup(function (e) {
+        if (polygonFlag) {
+            handleMouseUpPolygon(e);
+        }
+        else {
+            handleMouseUp(e);
+        }
+
+    });
+    $("#imgCanvas").mouseout(function (e) {
+        if (polygonFlag) {
+            handleMouseOutPolygon(e);
+        }
+        else {
+            handleMouseOut(e);
+        }
+
+    });
+}
+
+function InitializeRectangleAnnotation() {
+    polygonFlag = false;
     //if (!$("#btnRect").hasClass("active")) {
     //    $("#btnRect").addClass("active");
 
     //    $("#btnCircle").addClass("disabled");
     //    $("#btnPolygon").addClass("disabled");
-        initializeCanvasObject();
-        loadBoundingBoxes();
-        // listen for mouse events
-        $("#imgCanvas").mousedown(function (e) {
-            handleMouseDown(e);
-        });
-        $("#imgCanvas").mousemove(function (e) {
-            handleMouseMove(e);
-        });
-        $("#imgCanvas").mouseup(function (e) {
-            handleMouseUp(e);
-        });
-        $("#imgCanvas").mouseout(function (e) {
-            handleMouseOut(e);
-        });
+    initializeCanvasObject();
+    loadBoundingBoxes();
+
+    listenMouseEvents();
     //}
     //else {
     //    $("#btnRect").removeClass("active");
@@ -165,12 +194,63 @@ function InitializeRectangleAnnotation() {
 
 function InitializePolygonAnnotation() {
     polygonFlag = true;
+
+    initializeCanvasObject();
+   
+    loadPolygons();
+}
+
+function refreshAnnotations() {
+    if (polygonFlag) {
+        loadPolygons();
+    }
+    else {
+        loadBoundingBoxes();
+    }
+}
+
+function loadPolygons() {
+    $("#btnDelete").addClass("disabled");
+    $("#btnSave").addClass("disabled");
+    $("#btnRefresh").addClass("disabled");
+
+    polygons = [];
+    lineSegments = [];
+    removedPolygons = [];
+    var polygonData = $("#PolygonData").val();
+
+    if (polygonData != null && polygonData != "" && polygonData != "[]") {
+        var sPolygonsData = JSON.parse(polygonData);
+
+        //Continue.......
+        polygons = sPolygonsData.map(function (item) {
+            var objPolygon = new Polygon(item.id, item.polygonNo, item.startX, item.startY, item.endX, item.endY, item.photoId, null);
+
+            return objPolygon;
+        });
+
+        sPolygonsData.map(function (item) {
+
+            item.lineSegments.map((lineSegment) => {
+
+                var lineObj = new LineSegment(lineSegment.id, lineSegment.polygonNo, lineSegment.x1, lineSegment.y1, lineSegment.x2, lineSegment.y2);
+                lineSegments.push(lineObj);
+            });
+
+            // var objLineSegment = new LineSegment(item.lineSegments.id, item.lineSegments.polygonNo, item.lineSegments.x1, item.lineSegments.y1, item.lineSegments.x2, item.lineSegments.y2);
+
+            //    return arrLineSegment;
+        });
+
+        drawPolygon();
+    }
 }
 
 function loadBoundingBoxes() {
 
     $("#btnDelete").addClass("disabled");
     $("#btnSave").addClass("disabled");
+    $("#btnRefresh").addClass("disabled");
 
     const boxData = $("#BoundingBoxData").val();
     
@@ -181,15 +261,82 @@ function loadBoundingBoxes() {
             var objBox = new Box(item.id, item.x1, item.x2, item.y1, item.y2, item.angle, item.boundingBoxNumber, item.photoId, null);
             return objBox;
         });
-
-        let instCanvas = new Canvas();
-        instCanvas.redraw();
     }
+    let instCanvas = new Canvas();
+    instCanvas.redraw();
 }
 
 function addAction(item) {
     var objBox = new Box(item.id, item.x1, item.x2, item.y1, item.y2, item.angle, item.boundingBoxNumber, item.photoId, null);
     return objBox;
+}
+
+function saveAnnotations() {
+    if (polygonFlag) {
+        savePolygons();
+    }
+    else {
+        saveBoundingBox();
+    }
+}
+
+function savePolygons() {
+    if (!isServerAndClientSideChangesEqual()) {
+        var photoId = $("#PhotoId").val();
+        var contentUrl = $('#SavePolygonUrl').val();
+
+        let allPolygons = polygons;
+
+        if (removedPolygons.length != 0) {
+            for (var i = 0; i < removedPolygons.length; i++) {
+                allPolygons.push(removedPolygons[i]);
+            }
+        }
+
+        const arrPolygonData = allPolygons.map(function (value, index) {
+            var lineSeg = lineSegments.filter((lineSegment) => {
+                return lineSegment.polygonNo == value.polygonNo;
+            });
+
+            var obj = {
+                id: value.id,
+                polygonNo: value.polygonNo,
+                startX: value.startX,
+                startY: value.startY,
+                endX: value.endX,
+                endY: value.endY,
+                photoId: value.photoId,
+                action: value.action,
+                lineSegments: lineSeg
+            }
+
+            return obj;
+        });
+
+        var jsonStr = JSON.stringify(arrPolygonData);
+
+        $.ajax({
+            url: contentUrl,
+            data: '{polygonData:' + jsonStr + ',photoId:' + photoId + '}',
+            contentType: 'application/json;charset=utf-8',
+            type: 'POST',
+            success: function (data) {
+                $("#divCanvasViewPartial").html(data);
+                var element = document.getElementById("btnSave");
+                showToastrJs(success, "Changes saved successfully.");
+
+                $("#btnSave").addClass("disabled");
+                $("#btnRefresh").addClass("disabled");
+
+                document.getElementById("btnSave").disabled = true;
+                InitializePolygonAnnotation();
+
+                listenMouseEvents();
+            }
+        }).fail(function (callResult) {
+            ShowAjaxFailMessage(callResult, 'An error occurred : ');
+        });
+    }
 }
 
 function saveBoundingBox() {
@@ -220,11 +367,13 @@ function saveBoundingBox() {
             type: 'POST',
             success: function (data) {
                 $("#divCanvasViewPartial").html(data);
-
+                var element = document.getElementById("btnSave");
                 showToastrJs(success, "Changes saved successfully.");
 
                 $("#btnSave").addClass("disabled");
+                $("#btnRefresh").addClass("disabled");
 
+                document.getElementById("btnSave").disabled = true;
                 InitializeRectangleAnnotation();
             }
         }).fail(function (callResult) {
@@ -234,6 +383,48 @@ function saveBoundingBox() {
     }
 }
 
+function removeAnnotations() {
+
+    if (polygonFlag) {
+        removePolygon();
+    }
+    else {
+        removeBoundingBox();     
+    }
+}
+
+function removePolygon() {
+
+    //#region Remove polygon from polygons array
+    //var getIndex = function (item) {
+    //    return item.polygonNo == clickedPolygon.polygonNo;
+    //}
+
+    // var polyIndx = polygons.findIndex(getIndex);
+
+    if (polygons[clickedPolygon.indx].id != null) {
+        polygons[clickedPolygon.indx].action = DeleteAct;
+        removedPolygons.push(polygons[clickedPolygon.indx]);
+    }
+    polygons.splice(clickedPolygon.indx, 1);
+    //#endregion 
+
+    //#region Remove linesegments for removed polygon
+    const filteredLineSegments = lineSegments.filter((lineSegment) => {
+        return lineSegment.polygonNo != clickedPolygon.polygonNo;
+    });
+
+    lineSegments = [];
+    lineSegments = filteredLineSegments;
+    //#endregion 
+
+    updateHiddenFieldPolygon();
+
+    drawPolygon();
+    $("#btnDelete").addClass("disabled");
+    document.getElementById("btnDelete").disabled = true;
+}
+
 function removeBoundingBox() {
     if (selectedBoxIndex != -1) {
 
@@ -241,14 +432,14 @@ function removeBoundingBox() {
             boxes[selectedBoxIndex].action = DeleteAct;
             removedBoxes.push(boxes[selectedBoxIndex]);
         }
-      
+
         boxes.splice(selectedBoxIndex, 1);
         updateHiddenFieldFromBoxes();
 
         $("#btnDelete").addClass("disabled");
+        document.getElementById("btnDelete").disabled = true;
         iCanvas.redraw();
     }
-    
 }
 
 function isEmptyCheck(value) {
@@ -256,22 +447,41 @@ function isEmptyCheck(value) {
 }
 
 function isServerAndClientSideChangesEqual() {
+    var serverChanges = null;
+    var clientChanges = null;
 
-    var serverChanges = $("#BoundingBoxData").val();
-    var clientChanges = $("#ClientSideBoundingBoxData").val();
+    if (polygonFlag) {
+        serverChanges = $("#PolygonData").val();
+        clientChanges = $("#ClientSidePolygonData").val();
 
-    var arrServer = serverChanges != null && serverChanges != "" && serverChanges != "[]" ? JSON.parse(serverChanges) : null;
-    var arrClient = clientChanges != null && clientChanges != "" && clientChanges != "[]" ? JSON.parse(clientChanges) : null;
+        var arrServer = serverChanges != null && serverChanges != "" && serverChanges != "[]" ? JSON.parse(serverChanges) : null;
+        var arrClient = clientChanges != null && clientChanges != "" && clientChanges != "[]" ? JSON.parse(clientChanges) : null;
 
-    if (!isArraysEqual(arrServer, arrClient)) {
-        return false;
+        if (!isPolygonsEqual(arrServer, arrClient)) {
+            return false;
+        }
+        else {
+            return true;
+        }
     }
     else {
-        return true;
+        serverChanges = $("#BoundingBoxData").val();
+        clientChanges = $("#ClientSideBoundingBoxData").val();
+
+        var arrServer = serverChanges != null && serverChanges != "" && serverChanges != "[]" ? JSON.parse(serverChanges) : null;
+        var arrClient = clientChanges != null && clientChanges != "" && clientChanges != "[]" ? JSON.parse(clientChanges) : null;
+
+        if (!isBoxesEqual(arrServer, arrClient)) {
+            return false;
+        }
+        else {
+            return true;
+        }
     }
+    
 }
 
-function isArraysEqual(a, b) {
+function isBoxesEqual(a, b) {
 
     if (a === null && b === null) return true;
     if (a !== null && b === null) return false;
@@ -280,6 +490,20 @@ function isArraysEqual(a, b) {
 
     for (var i = 0; i < a.length; i++) {
         if (a[i].angle != b[i].angle || a[i].x1 != b[i].x1 || a[i].y1 != b[i].y1 || a[i].x2 != b[i].x2 || a[i].y2 != b[i].y2) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function isPolygonsEqual(a, b) {
+    if (a === null && b === null) return true;
+    if (a !== null && b === null) return false;
+    if (a === null && b !== null) return false;
+    if (a.length != b.length) return false;
+
+    for (var i = 0; i < a.length; i++) {
+        if (a[i].StartX != b[i].StartX || a[i].StartY != b[i].StartY || a[i].EndX != b[i].EndX || a[i].EndY != b[i].EndY) {
             return false;
         }
     }

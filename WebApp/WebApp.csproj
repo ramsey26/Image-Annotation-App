@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.Default.props" Condition="Exists('$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.Default.props')" />
   <Import Project="..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\build\net46\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props" Condition="Exists('..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\build\net46\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props')" />
@@ -188,6 +188,8 @@
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="DTOs\BoundingBoxDto.cs" />
     <Compile Include="DTOs\HttpExceptionDto.cs" />
+    <Compile Include="DTOs\LineSegmentDto.cs" />
+    <Compile Include="DTOs\PolygonDto.cs" />
     <Compile Include="DTOs\UserDto.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -201,9 +203,11 @@
     <Compile Include="Models\CanvasViewModel.cs" />
     <Compile Include="Models\DashboardViewModel.cs" />
     <Compile Include="Models\FileUploadModel.cs" />
+    <Compile Include="Models\LineSegmentDataModel.cs" />
     <Compile Include="Models\MemberDataModel.cs" />
     <Compile Include="Models\PhotoDataModel.cs" />
     <Compile Include="Models\BoundingBoxDataModel.cs" />
+    <Compile Include="Models\PolygonDataModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\AccountService.cs" />
     <Compile Include="Services\HttpClientService.cs" />
@@ -228,6 +232,7 @@
     <Content Include="Grid.mvc.readme" />
     <Content Include="Scripts\bootstrap.js" />
     <Content Include="Scripts\bootstrap.min.js" />
+    <Content Include="Scripts\Dashboard\Polygon.js" />
     <Content Include="Scripts\Dashboard\RectangleAnnotation.js" />
     <Content Include="Scripts\esm\popper-utils.js" />
     <Content Include="Scripts\esm\popper-utils.min.js" />

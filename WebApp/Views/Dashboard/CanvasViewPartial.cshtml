@@ -26,7 +26,9 @@
 </script>
 <div>
     @Html.Hidden("BoundingBoxData", Model.BoundingBoxDataModels != null ? JsonConvert.SerializeObject(Model.BoundingBoxDataModels, serializeSetting) : null)
+    @Html.Hidden("PolygonData", Model.PolygonDataModels != null ? JsonConvert.SerializeObject(Model.PolygonDataModels, serializeSetting) : null)
     @Html.Hidden("ClientSideBoundingBoxData")
+    @Html.Hidden("ClientSidePolygonData")
     @Html.Hidden("PhotoId", Model.PhotoDataModel.Id)
     <canvas id="imgCanvas" width=640 height=480></canvas>
 </div>

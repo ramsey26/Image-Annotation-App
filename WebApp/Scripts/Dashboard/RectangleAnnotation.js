@@ -1,8 +1,8 @@
 ﻿let boxes = [];
 let ctx = "";
 let mousedown = false;
-let startX;
-let startY;
+let startX = null;
+let startY = null;
 let clickedArea = { box: -1, pos: 'o' };
 let tmpBox = null;
 let lineOffset = 4;
@@ -298,6 +298,7 @@ function initializeCanvasObject() {
     canvas = document.getElementById("imgCanvas");
     ctx = canvas.getContext("2d");
 
+    ctx.clearRect(0, 0, 640, 480);
     // style the context
     // ctx.strokeStyle = "#ff0000";
     ctx.lineWidth = 2;
@@ -326,7 +327,7 @@ function handleMouseDown(e) {
     if (clickedArea.box != -1) {
 
         $("#btnDelete").removeClass("disabled");
-      
+        document.getElementById("btnDelete").disabled = false;
 
         selectedBoxIndex = clickedArea.box;
         iCanvas.redraw();
@@ -341,6 +342,8 @@ function handleMouseDown(e) {
     }
     else {
         $("#btnDelete").addClass("disabled");
+        document.getElementById("btnDelete").disabled = true;
+
         iCanvas.redraw();
     }
 }
@@ -581,10 +584,10 @@ function updateAngleInBox(box) {
 function angle(cx, cy, ex, ey) {
     var dy = ey - cy;  //Calculate difference between center of box and cursor coordinates 
     var dx = ex - cx;
-    var theta = Math.atan2(dy, dx); // range (-PI, PI]
+    var theta = Math.atan2(dy, dx);// range (-PI, PI]
     theta *= 180 / Math.PI; // rads to degs, range (-180, 180]
     if (theta < 0) theta = 360 + theta; // range [0, 360)
-    console.log("Angle = " + theta);
+   // console.log("Angle = " + theta);
     return theta;
 }
 
@@ -868,7 +871,6 @@ function checkBoxExistAndOverlap(selectedBox) {
 }
 
 function updateHiddenFieldFromBoxes() {
-
     var jsonStr = boxes.length > 0 ? JSON.stringify(boxes) : "";
     $("#ClientSideBoundingBoxData").val(jsonStr);
 
@@ -876,9 +878,18 @@ function updateHiddenFieldFromBoxes() {
     //if both are equal then no need to enable button but if there are changes then enable it.
     if (!isServerAndClientSideChangesEqual()) {
         $("#btnSave").removeClass("disabled");
+        $("#btnRefresh").removeClass("disabled");
+
+       
+
+        document.getElementById("btnSave").disabled = false;
     }
     else {
         $("#btnSave").addClass("disabled");
+        $("#btnRefresh").addClass("disabled");
+
+      //  element.removeAttribute("disabled","false");
+        document.getElementById("btnSave").disabled = true;
     }
 
     ////If the textArea field contains value then enable delete all button 
@@ -951,7 +962,7 @@ function doPolygonsIntersect(a, b) {
             // if there is no overlap between the projects, the edge we are looking at separates the two
             // polygons, and we know there is no overlap
             if (maxA < minB || maxB < minA) {
-                console.log("polygons don't intersect!");
+              //  console.log("polygons don't intersect!");
                 return false;
             }
 

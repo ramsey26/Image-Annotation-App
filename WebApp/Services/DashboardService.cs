@@ -78,6 +78,43 @@ namespace WebApp.Services
             return true;
         }
 
+        public async Task<List<PolygonDataModel>> GetPolygonsByPhotoId(int photoId)
+        {
+            List<PolygonDataModel> polygonData = null;
+            try
+            {
+                HttpResponseMessage resp = await client.GetAsync($"api/Polygon/{photoId}");
+                resp.EnsureSuccessStatusCode();
+                if (resp.IsSuccessStatusCode)
+                {
+                    polygonData = await resp.Content.ReadAsAsync<List<PolygonDataModel>>();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+            return polygonData;
+        }
+
+        public async Task<bool> SavePolygonData(IEnumerable<PolygonDataModel> polygonDataModels)
+        {
+            try
+            {
+                HttpResponseMessage resp = await client.PostAsJsonAsync("api/Polygon/save-polygon", polygonDataModels);
+                resp.EnsureSuccessStatusCode();
+                if (!resp.IsSuccessStatusCode)
+                {
+                    return false;
+                }
+            }
+            catch(Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+            return true;
+        }
+
         public async Task<bool> UploadPhotoData(PhotoDataModel photoDataModel)
         {
             bool photoUploaded = false;
