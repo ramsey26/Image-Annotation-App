@@ -26,6 +26,7 @@
             font-size: small;
         }
     </style>
+    <link href="~/Content/Loader.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
@@ -40,6 +41,7 @@
     <script src="~/Scripts/Dashboard/Dashboard.js"></script>
     <script src="~/Scripts/Dashboard/RectangleAnnotation.js"></script>
     <script src="~/Scripts/Dashboard/Polygon.js"></script>
+    <script src="~/Scripts/fontawesome.js"></script>
     <script type="text/javascript">
 
         function showToastr() {
@@ -92,10 +94,10 @@
             </div>
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
-                    @if (HttpContext.Current.User.Identity.IsAuthenticated)
+                    @*@if (HttpContext.Current.User.Identity.IsAuthenticated)
                     {
                         <li class="@(ViewContext.RouteData.Values["Action"].ToString() == "Dashboard" ? "active" : "")">@Html.ActionLink("Dashboard", "Dashboard", "Dashboard")</li>
-                    }
+                    }*@
 
                 </ul>
                 @Html.Partial("_LoginPartial")
@@ -106,13 +108,18 @@
         @RenderBody()
     </div>
     <div class="footer">
-            <p>&copy; @DateTime.Now.Year - Developed by Vyas</p>
+        <p>&copy; @DateTime.Now.Year - Developed by Vyas</p>
+    </div>
+    <div class="spinner" style="display:none">
+        <div class="center-div">
+            <div class="inner-div">
+                <div class="loader"></div>
+            </div>
         </div>
-
+    </div>
     @Scripts.Render("~/bundles/jquery")
     @Scripts.Render("~/bundles/bootstrap")
     @RenderSection("scripts", required: false)
 
-   
 </body>
 </html>

@@ -42,6 +42,8 @@ class Box {
     }
 
     doesBoxAreaExists() {
+        this.width = this.x2 - this.x1;
+        this.height = this.y2 - this.y1;
         if (this.width >= boxEdgeOffset && this.height >= boxEdgeOffset) {
             return true;
         }
@@ -308,256 +310,286 @@ function initializeCanvasObject() {
 }
 
 function handleMouseDown(e) {
-    mousedown = true;
-
-    setCanvasOffset();
-    // save the starting x/y of the rectangle
-    //If user scroll page horizontally or vertically then minus page offset from canvas offset
-    startX = parseFloat(e.clientX - offsetXResult);
-    startY = parseFloat(e.clientY - offsetYResult);
-
-    iCanvas = new Canvas(startX, startY, startX, startY);
-    clickedArea = iCanvas.findCurrentArea();
-
-    if (clickedArea.box == -1) {
-        selectedBoxIndex = -1;
-        clickedArea = iCanvas.findCurrentAreaForRotatedRect();
-    }
-
-    if (clickedArea.box != -1) {
-
-        $("#btnDelete").removeClass("disabled");
-        document.getElementById("btnDelete").disabled = false;
-
-        selectedBoxIndex = clickedArea.box;
-        iCanvas.redraw();
-
-        let selectedBox = iCanvas.getSelectedBox();
-        if (selectedBox.angle != null) {
-            selectedBox.rotateBox();
-        }
-        else {
-            selectedBox.drawEdgeOnSelectedBox();
-        }
+    if (polygonFlag) {
+        handleMouseDownPolygon(e);
     }
     else {
-        $("#btnDelete").addClass("disabled");
-        document.getElementById("btnDelete").disabled = true;
+        mousedown = true;
 
-        iCanvas.redraw();
+        setCanvasOffset();
+        // save the starting x/y of the rectangle
+        //If user scroll page horizontally or vertically then minus page offset from canvas offset
+        startX = parseFloat(e.clientX - offsetXResult);
+        startY = parseFloat(e.clientY - offsetYResult);
+
+        iCanvas = new Canvas(startX, startY, startX, startY);
+        clickedArea = iCanvas.findCurrentArea();
+
+        if (clickedArea.box == -1) {
+            selectedBoxIndex = -1;
+            clickedArea = iCanvas.findCurrentAreaForRotatedRect();
+        }
+
+        if (clickedArea.box != -1) {
+
+            $("#btnDelete").removeClass("disabled");
+            document.getElementById("btnDelete").disabled = false;
+
+            selectedBoxIndex = clickedArea.box;
+            iCanvas.redraw();
+
+            let selectedBox = iCanvas.getSelectedBox();
+            if (selectedBox.angle != null) {
+                selectedBox.rotateBox();
+            }
+            else {
+                selectedBox.drawEdgeOnSelectedBox();
+            }
+        }
+        else {
+            $("#btnDelete").addClass("disabled");
+            document.getElementById("btnDelete").disabled = true;
+
+            iCanvas.redraw();
+        }
     }
 }
 
 function handleMouseUp(e) {
-    if (clickedArea.box == -1 && tmpBox != null) {
-        
-        if (tmpBox.doesBoxAreaExists()) {
-            boxes.push(tmpBox);
-            updateHiddenFieldFromBoxes();
-
-           
-           // iCanvas.redraw();
-        }
-        else {
-            var initialBoxes = $("#ClientSideBoundingBoxData").val();
-            boxes = JSON.parse(initialBoxes) == null ? [] : JSON.parse(initialBoxes);
-            iCanvas.redraw();
-        }
-
+    if (polygonFlag) {
+        handleMouseUpPolygon(e);
     }
-    else if (clickedArea.box != -1) {
+    else {
+        if (clickedArea.box == -1 && tmpBox != null) {
 
-      
-        var selectedBox = iCanvas.getSelectedBox();
-        if (selectedBox.x1 > selectedBox.x2) {
-            var previousX1 = selectedBox.x1;
-            selectedBox.x1 = selectedBox.x2;
-            selectedBox.x2 = previousX1;
+            if (tmpBox.doesBoxAreaExists()) {
+                boxes.push(tmpBox);
+                updateHiddenFieldFromBoxes();
+
+
+                // iCanvas.redraw();
+            }
+            else {
+                var initialBoxes = $("#ClientSideBoundingBoxData").val();
+                boxes = JSON.parse(initialBoxes) == null ? [] : JSON.parse(initialBoxes);
+                iCanvas.redraw();
+            }
+
         }
-        if (selectedBox.y1 > selectedBox.y2) {
-            var previousY1 = selectedBox.y1;
-            selectedBox.y1 = selectedBox.y2;
-            selectedBox.y2 = previousY1;
+        else if (clickedArea.box != -1) {
+
+            var selectedBox = iCanvas.getSelectedBox();
+            if (selectedBox.x1 > selectedBox.x2) {
+                var previousX1 = selectedBox.x1;
+                selectedBox.x1 = selectedBox.x2;
+                selectedBox.x2 = previousX1;
+            }
+            if (selectedBox.y1 > selectedBox.y2) {
+                var previousY1 = selectedBox.y1;
+                selectedBox.y1 = selectedBox.y2;
+                selectedBox.y2 = previousY1;
+            }
+
+            var modifiedBox = new Box(selectedBox.id, selectedBox.x1, selectedBox.x2, selectedBox.y1, selectedBox.y2, selectedBox.angle,
+                selectedBox.boundingBoxNumber, selectedBox.photoId, selectedBox.action);
+
+            boxes[clickedArea.box] = modifiedBox;
+
+            //Check if box overlap with other existing boxes when moved, resized or rotated
+            var isOverlap = false;
+            //if (selectedBox.angle != 0) {
+            //    isOverlap = willRectangleOverlap(selectedBox);
+            //}
+            //else {
+            //    isOverlap = willOverlap(selectedBox);
+            //}
+
+            checkBoxExistAndOverlap(selectedBox);
+
         }
-
-        //Check if box overlap with other existing boxes when moved, resized or rotated
-        var isOverlap = false;
-        //if (selectedBox.angle != 0) {
-        //    isOverlap = willRectangleOverlap(selectedBox);
-        //}
-        //else {
-        //    isOverlap = willOverlap(selectedBox);
-        //}
-
-        checkBoxExistAndOverlap(selectedBox);
-
+        clickedArea = { box: -1, pos: 'o' };
+        tmpBox = null;
+        mousedown = false;
     }
-    clickedArea = { box: -1, pos: 'o' };
-    tmpBox = null;
-    mousedown = false;
+  
 }
 
 function handleMouseOut(e) {
-    if (clickedArea.box != -1) {
-        var selectedBox = iCanvas.getSelectedBox();
-        if (selectedBox.x1 > selectedBox.x2) {
-            var previousX1 = selectedBox.x1;
-            selectedBox.x1 = selectedBox.x2;
-            selectedBox.x2 > previousX1;
-        }
-        if (selectedBox.y1 > selectedBox.y2) {
-            var previousY1 = selectedBox.y1;
-            selectedBox.y1 = selectedBox.y2;
-            selectedBox.y2 > previousY1;
-        }
-
-        //Check if box overlap with other existing boxes when moved, resized or rotated
-        var isOverlap = false;
-        //if (selectedBox.angle != 0) {
-        //    isOverlap = willRectangleOverlap(selectedBox);
-        //}
-        //else {
-        //    isOverlap = willOverlap(selectedBox);
-        //}
-
-        checkBoxExistAndOverlap(selectedBox);
+    if (polygonFlag) {
+        handleMouseOutPolygon(e);
     }
+    else {
+        if (clickedArea.box != -1) {
+            var selectedBox = iCanvas.getSelectedBox();
+            if (selectedBox.x1 > selectedBox.x2) {
+                var previousX1 = selectedBox.x1;
+                selectedBox.x1 = selectedBox.x2;
+                selectedBox.x2 > previousX1;
+            }
+            if (selectedBox.y1 > selectedBox.y2) {
+                var previousY1 = selectedBox.y1;
+                selectedBox.y1 = selectedBox.y2;
+                selectedBox.y2 > previousY1;
+            }
 
-    iCanvas = new Canvas(-1, -1, -1, -1);
-    mousedown = false;
-    clickedArea = { box: -1, pos: 'o' };
-    tmpBox = null;
+            var modifiedBox = new Box(selectedBox.id, selectedBox.x1, selectedBox.x2, selectedBox.y1, selectedBox.y2, selectedBox.angle,
+                selectedBox.boundingBoxNumber, selectedBox.photoId, selectedBox.action);
+
+            boxes[clickedArea.box] = modifiedBox;
+
+            //Check if box overlap with other existing boxes when moved, resized or rotated
+            var isOverlap = false;
+            //if (selectedBox.angle != 0) {
+            //    isOverlap = willRectangleOverlap(selectedBox);
+            //}
+            //else {
+            //    isOverlap = willOverlap(selectedBox);
+            //}
+
+            checkBoxExistAndOverlap(selectedBox);
+        }
+
+        iCanvas = new Canvas(-1, -1, -1, -1);
+        mousedown = false;
+        clickedArea = { box: -1, pos: 'o' };
+        tmpBox = null;
+    }
 }
 
 function handleMouseMove(e) {
-    iCanvas.endX = parseFloat(e.clientX - offsetXResult);
-    iCanvas.endY = parseFloat(e.clientY - offsetYResult);
-    if (mousedown && clickedArea.box == -1) {
-        iCanvas.redraw();
+    if (polygonFlag) {
+        handleMouseMovePolygon(e);
     }
-    else if (mousedown && clickedArea.box != -1) {
-
-        UpdateBoxEditAction();
-
-        let box = iCanvas.getSelectedBox();
-        xOffset = iCanvas.endX - iCanvas.startX;
-        yOffset = iCanvas.endY - iCanvas.startY;
-        iCanvas.startX = iCanvas.endX;
-        iCanvas.startY = iCanvas.endY;
-
-        if ((box.angle >= 315 && box.angle <= 360) || box.angle < 45) {
-            if (clickedArea.pos == 'i' ||
-                clickedArea.pos == 'tl' ||
-                clickedArea.pos == 'l' ||
-                clickedArea.pos == 'bl') {
-                boxes[clickedArea.box].x1 += xOffset;
-            }
-            if (clickedArea.pos == 'i' ||
-                clickedArea.pos == 'tl' ||
-                // clickedArea.pos == 't' ||
-                clickedArea.pos == 'tr') {
-                boxes[clickedArea.box].y1 += yOffset;
-            }
-            if (clickedArea.pos == 'i' ||
-                clickedArea.pos == 'tr' ||
-                clickedArea.pos == 'r' ||
-                clickedArea.pos == 'br') {
-                boxes[clickedArea.box].x2 += xOffset;
-            }
-            if (clickedArea.pos == 'i' ||
-                clickedArea.pos == 'bl' ||
-                clickedArea.pos == 'b' ||
-                clickedArea.pos == 'br') {
-                boxes[clickedArea.box].y2 += yOffset;
-            }
+    else {
+        iCanvas.endX = parseFloat(e.clientX - offsetXResult);
+        iCanvas.endY = parseFloat(e.clientY - offsetYResult);
+        if (mousedown && clickedArea.box == -1) {
+            iCanvas.redraw();
         }
-        else if (box.angle >= 45 && box.angle < 135) {
-            if (clickedArea.pos == 'i') {
-                boxes[clickedArea.box].x1 += xOffset;
-                boxes[clickedArea.box].y1 += yOffset;
-                boxes[clickedArea.box].x2 += xOffset;
-                boxes[clickedArea.box].y2 += yOffset;
-            }
-            if (clickedArea.pos == 'tl' ||
-                clickedArea.pos == 'l' ||
-                clickedArea.pos == 'bl') {
-                boxes[clickedArea.box].x1 += yOffset;
-            }
-            if (clickedArea.pos == 'tl' ||
-                // clickedArea.pos == 't' ||
-                clickedArea.pos == 'tr') {
-                boxes[clickedArea.box].y1 += -xOffset;
-            }
-            if (clickedArea.pos == 'tr' ||
-                clickedArea.pos == 'r' ||
-                clickedArea.pos == 'br') {
-                boxes[clickedArea.box].x2 += yOffset;
-            }
-            if (clickedArea.pos == 'bl' ||
-                clickedArea.pos == 'b' ||
-                clickedArea.pos == 'br') {
-                boxes[clickedArea.box].y2 += -xOffset;
-            }
-        }
-        else if (box.angle >= 135 && box.angle < 225) {
-            if (clickedArea.pos == 'i' || clickedArea.pos == 'tl' ||
-                clickedArea.pos == 'l' ||
-                clickedArea.pos == 'bl') {
-                boxes[clickedArea.box].x2 += xOffset;
-            }
-            if (clickedArea.pos == 'i' || clickedArea.pos == 'tl' ||
-                // clickedarea.pos == 't' ||
-                clickedArea.pos == 'tr') {
-                boxes[clickedArea.box].y2 += yOffset;
-            }
-            if (clickedArea.pos == 'i' || clickedArea.pos == 'tr' ||
-                clickedArea.pos == 'r' ||
-                clickedArea.pos == 'br') {
-                boxes[clickedArea.box].x1 += xOffset;
-            }
-            if (clickedArea.pos == 'i' || clickedArea.pos == 'bl' ||
-                clickedArea.pos == 'b' ||
-                clickedArea.pos == 'br') {
-                boxes[clickedArea.box].y1 += yOffset;
-            }
-        }
-        else if (box.angle >= 225 && box.angle < 315) {
-            if (clickedArea.pos == 'i') {
-                boxes[clickedArea.box].x1 += xOffset;
-                boxes[clickedArea.box].y1 += yOffset;
-                boxes[clickedArea.box].x2 += xOffset;
-                boxes[clickedArea.box].y2 += yOffset;
-            }
-            if (clickedArea.pos == 'tl' ||
-                clickedArea.pos == 'l' ||
-                clickedArea.pos == 'bl') {
-                boxes[clickedArea.box].x1 += -yOffset;
-            }
-            if (clickedArea.pos == 'tl' ||
-                // clickedArea.pos == 't' ||
-                clickedArea.pos == 'tr') {
-                boxes[clickedArea.box].y1 += xOffset;
-            }
-            if (clickedArea.pos == 'tr' ||
-                clickedArea.pos == 'r' ||
-                clickedArea.pos == 'br') {
-                boxes[clickedArea.box].x2 += -yOffset;
-            }
-            if (clickedArea.pos == 'bl' ||
-                clickedArea.pos == 'b' ||
-                clickedArea.pos == 'br') {
-                boxes[clickedArea.box].y2 += xOffset;
-            }
-        }
+        else if (mousedown && clickedArea.box != -1) {
 
-        if (clickedArea.pos == 'c') {
-            box.initializeRotation();
+            UpdateBoxEditAction();
 
-            updateAngleInBox(box);
+            let box = iCanvas.getSelectedBox();
+            xOffset = iCanvas.endX - iCanvas.startX;
+            yOffset = iCanvas.endY - iCanvas.startY;
+            iCanvas.startX = iCanvas.endX;
+            iCanvas.startY = iCanvas.endY;
+
+            if ((box.angle >= 315 && box.angle <= 360) || box.angle < 45) {
+                if (clickedArea.pos == 'i' ||
+                    clickedArea.pos == 'tl' ||
+                    clickedArea.pos == 'l' ||
+                    clickedArea.pos == 'bl') {
+                    boxes[clickedArea.box].x1 += xOffset;
+                }
+                if (clickedArea.pos == 'i' ||
+                    clickedArea.pos == 'tl' ||
+                    // clickedArea.pos == 't' ||
+                    clickedArea.pos == 'tr') {
+                    boxes[clickedArea.box].y1 += yOffset;
+                }
+                if (clickedArea.pos == 'i' ||
+                    clickedArea.pos == 'tr' ||
+                    clickedArea.pos == 'r' ||
+                    clickedArea.pos == 'br') {
+                    boxes[clickedArea.box].x2 += xOffset;
+                }
+                if (clickedArea.pos == 'i' ||
+                    clickedArea.pos == 'bl' ||
+                    clickedArea.pos == 'b' ||
+                    clickedArea.pos == 'br') {
+                    boxes[clickedArea.box].y2 += yOffset;
+                }
+            }
+            else if (box.angle >= 45 && box.angle < 135) {
+                if (clickedArea.pos == 'i') {
+                    boxes[clickedArea.box].x1 += xOffset;
+                    boxes[clickedArea.box].y1 += yOffset;
+                    boxes[clickedArea.box].x2 += xOffset;
+                    boxes[clickedArea.box].y2 += yOffset;
+                }
+                if (clickedArea.pos == 'tl' ||
+                    clickedArea.pos == 'l' ||
+                    clickedArea.pos == 'bl') {
+                    boxes[clickedArea.box].x1 += yOffset;
+                }
+                if (clickedArea.pos == 'tl' ||
+                    // clickedArea.pos == 't' ||
+                    clickedArea.pos == 'tr') {
+                    boxes[clickedArea.box].y1 += -xOffset;
+                }
+                if (clickedArea.pos == 'tr' ||
+                    clickedArea.pos == 'r' ||
+                    clickedArea.pos == 'br') {
+                    boxes[clickedArea.box].x2 += yOffset;
+                }
+                if (clickedArea.pos == 'bl' ||
+                    clickedArea.pos == 'b' ||
+                    clickedArea.pos == 'br') {
+                    boxes[clickedArea.box].y2 += -xOffset;
+                }
+            }
+            else if (box.angle >= 135 && box.angle < 225) {
+                if (clickedArea.pos == 'i' || clickedArea.pos == 'tl' ||
+                    clickedArea.pos == 'l' ||
+                    clickedArea.pos == 'bl') {
+                    boxes[clickedArea.box].x2 += xOffset;
+                }
+                if (clickedArea.pos == 'i' || clickedArea.pos == 'tl' ||
+                    // clickedarea.pos == 't' ||
+                    clickedArea.pos == 'tr') {
+                    boxes[clickedArea.box].y2 += yOffset;
+                }
+                if (clickedArea.pos == 'i' || clickedArea.pos == 'tr' ||
+                    clickedArea.pos == 'r' ||
+                    clickedArea.pos == 'br') {
+                    boxes[clickedArea.box].x1 += xOffset;
+                }
+                if (clickedArea.pos == 'i' || clickedArea.pos == 'bl' ||
+                    clickedArea.pos == 'b' ||
+                    clickedArea.pos == 'br') {
+                    boxes[clickedArea.box].y1 += yOffset;
+                }
+            }
+            else if (box.angle >= 225 && box.angle < 315) {
+                if (clickedArea.pos == 'i') {
+                    boxes[clickedArea.box].x1 += xOffset;
+                    boxes[clickedArea.box].y1 += yOffset;
+                    boxes[clickedArea.box].x2 += xOffset;
+                    boxes[clickedArea.box].y2 += yOffset;
+                }
+                if (clickedArea.pos == 'tl' ||
+                    clickedArea.pos == 'l' ||
+                    clickedArea.pos == 'bl') {
+                    boxes[clickedArea.box].x1 += -yOffset;
+                }
+                if (clickedArea.pos == 'tl' ||
+                    // clickedArea.pos == 't' ||
+                    clickedArea.pos == 'tr') {
+                    boxes[clickedArea.box].y1 += xOffset;
+                }
+                if (clickedArea.pos == 'tr' ||
+                    clickedArea.pos == 'r' ||
+                    clickedArea.pos == 'br') {
+                    boxes[clickedArea.box].x2 += -yOffset;
+                }
+                if (clickedArea.pos == 'bl' ||
+                    clickedArea.pos == 'b' ||
+                    clickedArea.pos == 'br') {
+                    boxes[clickedArea.box].y2 += xOffset;
+                }
+            }
+
+            if (clickedArea.pos == 'c') {
+                box.initializeRotation();
+
+                updateAngleInBox(box);
+            }
+
+            iCanvas.redraw();
         }
-
-        iCanvas.redraw();
-    }
+    } 
 }
 
 function UpdateBoxEditAction() {
@@ -880,9 +912,8 @@ function updateHiddenFieldFromBoxes() {
         $("#btnSave").removeClass("disabled");
         $("#btnRefresh").removeClass("disabled");
 
-       
-
         document.getElementById("btnSave").disabled = false;
+        document.getElementById("btnRefresh").disabled = false;
     }
     else {
         $("#btnSave").addClass("disabled");
@@ -890,6 +921,7 @@ function updateHiddenFieldFromBoxes() {
 
       //  element.removeAttribute("disabled","false");
         document.getElementById("btnSave").disabled = true;
+        document.getElementById("btnRefresh").disabled = true;
     }
 
     ////If the textArea field contains value then enable delete all button 

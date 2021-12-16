@@ -16,51 +16,62 @@ using WebApp.Services;
 namespace WebApp.Controllers
 {
     [Authorize]
+   // [RoutePrefix("Dashboard")]
     public class DashboardController : Controller
     {
         public const string DashboardForm = "DashboardForm";
         public const string UploadFileForm = "UploadFileForm";
-        public const string SessionKeyUserData = "UserDashboardData";
         public const string SessionKeyCanvasData = "CanvasData";
         public const string GeneratedImagesVirtualPath = "~/GeneratedImages/";
-        
+        public const string SessionProjectKey = "ProjectKey";
+
         public UserSession _userSession = null;
         DashboardService dashboardService;
+        UserProjectService userProjectService;
         public DashboardController()
         {
             _userSession = new UserSession();
             dashboardService = new DashboardService();
+            userProjectService = new UserProjectService();
         }
 
-        public async Task<ActionResult> Dashboard()
+        [ActionName("Dashboard")]
+        [Route("Dashboard/{projectName}")]
+        public async Task<ActionResult> Dashboard(string projectName)
         {
-            MemberDataModel userData;
+            Session[SessionProjectKey] = projectName;
+
+            UserProjectsWithPhotosDto userProjectsWithPhotosDto;
+
             DashboardViewModel dashboardViewModel = new DashboardViewModel();
 
-            userData = (MemberDataModel)Session[SessionKeyUserData];
+            userProjectsWithPhotosDto = (UserProjectsWithPhotosDto)Session[projectName];
 
-            if (userData==null)
+            if (userProjectsWithPhotosDto == null)
             {
-                userData = await dashboardService.GetUserData();
-
-                foreach (var image in userData.Photos)
+                userProjectsWithPhotosDto = await userProjectService.GetUserProjectByNameAsync(projectName);
+              
+                if (userProjectsWithPhotosDto !=null)
                 {
-                    byte[] imageToWrite = Convert.FromBase64String(image.FileContent);
-                    string strtest = Server.MapPath(GeneratedImagesVirtualPath);
+                    foreach (var image in userProjectsWithPhotosDto.Photos)
+                    {
+                        byte[] imageToWrite = Convert.FromBase64String(image.FileContent);
+                        string strtest = Server.MapPath(GeneratedImagesVirtualPath);
 
-                    image.ImageVirtualPath = imageToWrite.WriteImageFile(strtest, GeneratedImagesVirtualPath, image.FileName);
+                        image.ImageVirtualPath = imageToWrite.WriteImageFile(strtest, GeneratedImagesVirtualPath, image.FileName);
+                    }
                 }
             }
 
-            dashboardViewModel.MemberDataModel = userData;
+            dashboardViewModel.UserProjectWithPhotosDto = userProjectsWithPhotosDto;
 
-            Session[SessionKeyUserData] = userData;
+            Session[projectName] = userProjectsWithPhotosDto;
 
             return View(dashboardViewModel);
         }
 
-        [HttpPost]
         [ActionName("UploadFile")]
+        [Route("UploadFile")]
         public async Task<ActionResult> UploadFile()
         {
             HttpPostedFileBase uploadedFile;
@@ -91,12 +102,14 @@ namespace WebApp.Controllers
                     FileContent = Convert.ToBase64String(fileToSave),
                     FileContentType = uploadedFile.ContentType
                 };
+                string sessionProjectName = (string)Session[SessionProjectKey];
+                var dashboardData = (UserProjectsWithPhotosDto)Session[sessionProjectName];
 
-                bool isFileUploadedSuccessfully = await dashboardService.UploadPhotoData(photoDataModel);
+                bool isFileUploadedSuccessfully = await dashboardService.UploadPhotoData(photoDataModel, dashboardData.Id);
                 if (isFileUploadedSuccessfully)
                 {
                     //get last uploaded photo
-                    var image = await dashboardService.GetLastPhotoData();
+                    var image = await dashboardService.GetLastPhotoData(dashboardData.Id);
 
                     //Convert byte array to photo
                     byte[] imageToWrite = Convert.FromBase64String(image.FileContent);
@@ -105,12 +118,11 @@ namespace WebApp.Controllers
                     image.ImageVirtualPath = imageToWrite.WriteImageFile(strtest, GeneratedImagesVirtualPath, image.FileName);
 
                     //Update Photo collection with new uploaded photo
-                    var userData = (MemberDataModel)Session[SessionKeyUserData];
-                    userData.Photos.Add(image);
+                    dashboardData.Photos.Add(image);
 
-                    photoDataModels = userData.Photos;
-                     //Update Session data
-                     Session[SessionKeyUserData] = userData;
+                    photoDataModels = dashboardData.Photos;
+                    //Update Session data
+                    Session[sessionProjectName] = dashboardData;
                 }
             }
             catch (Exception ex)
@@ -119,16 +131,18 @@ namespace WebApp.Controllers
             }
 
             return PartialView("GridViewPartial", photoDataModels);
-           // return Json("Photo uploaded Successfully.");
+            // return Json("Photo uploaded Successfully.");
         }
 
-        [HttpPost]
+        [ActionName("GetCanvasImage")]
+        [Route("GetCanvasImage")]
         public async Task<ActionResult> GetCanvasImage(int photoId)
         {
             try
             {
-                var userData = (MemberDataModel)Session[SessionKeyUserData];
-                var photoDataModel = userData.Photos.FirstOrDefault(x => x.Id == photoId);
+                string sessionProjectName = (string)Session[SessionProjectKey];
+                var dashboardData = (UserProjectsWithPhotosDto)Session[sessionProjectName];
+                var photoDataModel = dashboardData.Photos.FirstOrDefault(x => x.Id == photoId);
 
                 // var sessionCanvasBoxes = (List<BoundingBoxDataModel>)Session[SessionKeyCanvasData];
 
@@ -150,7 +164,8 @@ namespace WebApp.Controllers
             }
         }
 
-        [HttpPost]
+        [ActionName("SaveBoundingBoxData")]
+        [Route("SaveBoundingBoxData")]
         public async Task<ActionResult> SaveBoundingBoxData(List<BoundingBoxDto> boundingBoxDtos, int photoId)
         {
             CanvasViewModel canvasViewModel = new CanvasViewModel();
@@ -169,8 +184,9 @@ namespace WebApp.Controllers
                     var boundingBoxDataModels = await dashboardService.GetBoxByPhotoId(photoId);
                     var polygonDataModels = await dashboardService.GetPolygonsByPhotoId(photoId);
 
-                    var userData = (MemberDataModel)Session[SessionKeyUserData];
-                    var photoDataModel = userData.Photos.FirstOrDefault(x => x.Id == photoId);
+                    string sessionProjectName = (string)Session[SessionProjectKey];
+                    var dashboardData = (UserProjectsWithPhotosDto)Session[sessionProjectName];
+                    var photoDataModel = dashboardData.Photos.FirstOrDefault(x => x.Id == photoId);
 
                     canvasViewModel.PhotoDataModel = photoDataModel;
                     canvasViewModel.BoundingBoxDataModels = boundingBoxDataModels;
@@ -186,8 +202,9 @@ namespace WebApp.Controllers
                 throw new Exception(ex.Message);
             }
         }
-        
-        [HttpPost]
+       
+        [ActionName("SavePolygonData")]
+        [Route("SavePolygonData")]
         public async Task<ActionResult> SavePolygonData(List<PolygonDataModel> polygonData, int photoId)
         {
             CanvasViewModel canvasViewModel = new CanvasViewModel();
@@ -200,8 +217,9 @@ namespace WebApp.Controllers
                 var polygonDataModels = await dashboardService.GetPolygonsByPhotoId(photoId);
                 var boundingBoxDataModels = await dashboardService.GetBoxByPhotoId(photoId);
 
-                var userData = (MemberDataModel)Session[SessionKeyUserData];
-                var photoDataModel = userData.Photos.FirstOrDefault(x => x.Id == photoId);
+                string sessionProjectName = (string)Session[SessionProjectKey];
+                var dashboardData = (UserProjectsWithPhotosDto)Session[sessionProjectName];
+                var photoDataModel = dashboardData.Photos.FirstOrDefault(x => x.Id == photoId);
 
                 canvasViewModel.PhotoDataModel = photoDataModel;
                 canvasViewModel.BoundingBoxDataModels = boundingBoxDataModels;
@@ -216,17 +234,20 @@ namespace WebApp.Controllers
             }
         }
 
-        [HttpPost]
+        [ActionName("GetGridViewData")]
+        [Route("GetGridViewData")]
         public ActionResult GetGridViewData()
         {
             try
             {
-                var userData = (MemberDataModel)Session[SessionKeyUserData];
+                string sessionProjectName = (string)Session[SessionProjectKey];
+                var dashboardData = (UserProjectsWithPhotosDto)Session[sessionProjectName];
+
                 List<PhotoDataModel> photoDataModel = new List<PhotoDataModel>();
 
-                if (userData.Photos.Count != 0)
+                if (dashboardData.Photos.Count != 0)
                 {
-                    photoDataModel = userData.Photos.ToList();
+                    photoDataModel = dashboardData.Photos.ToList();
                 }
                 return PartialView("GridViewPartial", photoDataModel);
             }

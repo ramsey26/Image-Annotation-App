@@ -60,7 +60,6 @@
 
 </style>
 
-<link href="~/Content/Loader.css" rel="stylesheet" />
 
 @using (Html.BeginForm("Dashboard", "Dashboard", FormMethod.Post, new { id = DashboardController.DashboardForm, encType = "multipart/form-data" }))
 {
@@ -71,24 +70,16 @@
     @Html.Hidden("SavePolygonUrl",Url.Action("SavePolygonData","Dashboard"))
 
     <div style="margin-top:10px;">
-        @if (Model.MemberDataModel.UserName != null)
+        @if (Model.UserProjectWithPhotosDto.ProjectName != null)
         {
             <div id="divUploadFilePanel">
                 @Html.Partial("UploadFileViewPartial", Model.FileUploadModel)
             </div>
 
             <div id="divImageAnnotationPanel">
-                @Html.Partial("ImageAnnotationPartial", Model.MemberDataModel)
+                @Html.Partial("ImageAnnotationPartial", Model.UserProjectWithPhotosDto)
             </div>
         }
-    </div>
-
-    <div class="spinner" style="display:none">
-        <div class="center-div">
-            <div class="inner-div">
-                <div class="loader"></div>
-            </div>
-        </div>
     </div>
 }
 

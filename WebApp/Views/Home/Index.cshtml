@@ -1,33 +1,94 @@
-﻿
+﻿@using WebApp.Models
+@model IndexViewModel
 
 @{
     ViewBag.Title = "Home Page";
 }
 
-<div class="jumbotron">
-    <h1>Image-Annotation</h1>
-    <p class="lead">Image annotation is defined as the task of annotating an image with labels, typically involving human-powered work and in some cases, computer-assisted help.</p>
-    <p><a href="https://asp.net" class="btn btn-primary btn-lg">Learn more &raquo;</a></p>
-</div>
+<style>
+    .row.content {
+        height: 100%;
+        margin-top: 70px;
+        background-color: white;
+        padding:10px 10px 10px 10px;
+    }
+    .box {
+        transition: box-shadow .3s;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        background-color: floralwhite;
+        width: 370px;
+        height: 270px;
+        padding: 5px 10px 5px 10px;
+    }
 
-<div class="row">
-    <div class="col-md-4">
-        <h2 style="color:floralwhite">Classification</h2>
-        <p style="color:floralwhite">
-            ASP.NET MVC gives you a powerful, patterns-based way to build dynamic websites that
-            enables a clean separation of concerns and gives you full control over markup
-            for enjoyable, agile development.
-        </p>
-        <p><a class="btn btn-default" href="https://go.microsoft.com/fwlink/?LinkId=301865">Learn more &raquo;</a></p>
-    </div>
-    <div class="col-md-4">
-        <h2 style="color:floralwhite">Object Detection</h2>
-        <p style="color:floralwhite">NuGet is a free Visual Studio extension that makes it easy to add, remove, and update libraries and tools in Visual Studio projects.</p>
-        <p><a class="btn btn-default" href="https://go.microsoft.com/fwlink/?LinkId=301866">Learn more &raquo;</a></p>
-    </div>
-    <div class="col-md-4">
-        <h2 style="color:floralwhite">Image Segmentation</h2>
-        <p style="color:floralwhite">You can easily find a web hosting company that offers the right mix of features and price for your applications.</p>
-        <p><a class="btn btn-default" href="https://go.microsoft.com/fwlink/?LinkId=301867">Learn more &raquo;</a></p>
+        .box:hover {
+            box-shadow: 0 0 11px rgba(33,33,33,.2);
+        }
+</style>
+<script>
+    @Model.JavascriptToRun
+
+    function showSpinner() {
+        $('.spinner').css('display', 'block');
+    }
+
+    function hideSpinner() {
+        $('.spinner').css('display', 'none');
+    }
+
+    function createProject() {
+        $('.spinner').css('display', 'block');
+
+        var form = $('#CreateProjectForm');
+        var createProjectUrl = $('#GetCreateProjectUrl').val();
+
+        $.post(createProjectUrl, $(form).serialize(), function (data) {
+            alert("Created");
+            $('.spinner').css('display', 'none');
+        }).fail(function (callResult) {
+            alert('Error : ' + callResult.responseText);
+            
+
+        });
+    }
+</script>
+
+@Html.Hidden("GetCreateProjectUrl",Url.Action("CreateProject","Home"))
+
+<div class="container-fluid">
+    <div class="row content">
+
+        <div class="col-md-8" style="background-color:white;height: 500px;">
+            <h2><i class='fas fa-folder-open' style='font-size: 36px; color: rebeccapurple; padding-right: 10px;'></i>Browse Projects</h2>
+
+            @if (Model.UserProjectDataModels.Count() == 0)
+            {
+                <hr />
+                <h5>You do not have any projects to browse..!!</h5>
+                <hr />
+            }
+            else
+            {
+        <div class="list-group" style="height:400px;overflow-y:scroll;">
+            @foreach (var project in Model.UserProjectDataModels)
+            {
+
+                    <a href="Dashboard/@project.ProjectName" class="list-group-item">
+                        @project.ProjectName <span class="glyphicon glyphicon-chevron-right"></span>
+                        <span class="badge" style="float:right">@project.DateCreated.ToShortDateString()</span>
+                    </a>
+
+            }
+            </div>
+            }
+        </div>
+        <div class="col-md-4" style="background-color: white; border:hidden">
+            <div class="form-group box">
+                @Html.Partial("CreateProjectViewPartial", Model.UserProjectViewModel)
+            </div>
+        </div>
+
+
     </div>
 </div>

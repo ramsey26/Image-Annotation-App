@@ -1,4 +1,4 @@
-﻿@model WebApp.Models.MemberDataModel
+﻿@model WebApp.DTOs.UserProjectsWithPhotosDto
 
 @{ 
     int noOfImages = Model.Photos.Count();
@@ -25,9 +25,9 @@
                  style="margin-left:10px;margin-top:20px;cursor:pointer;" width="70" height="70" onclick="InitializeRectangleAnnotation(); return false;" />
             <hr />
             <img id="btnCircle" src="~/UploadedFiles/VioCircle.png" class="btn" data-placement="right" title="Draw Circle on image"
-                 style="margin-left:10px;cursor:pointer;" width="70" height="70" />
+                 style="margin-left:10px;cursor:pointer;display:none;" width="70" height="70" />
 
-            <hr />
+            @*<hr />*@
             <img id="btnPolygon" src="~/UploadedFiles/VioPolygon.png" class="btn" data-placement="right" title="Draw Polygon on image"
                  style="margin-left:10px;cursor:pointer;" width="70" height="70" onclick="InitializePolygonAnnotation(); return false;" />
             <hr />
@@ -40,10 +40,11 @@
             <div style="margin-top: 5px; float: left; border: 2px solid darkorchid;">
                 @*<input id="btnSave" class="btn btn-success disabled" style="cursor: pointer;" onclick="saveBoundingBox(); return false;" type="button" value="Save" />
         <input id="btnDelete" class="btn btn-danger disabled" style="cursor: pointer;" onclick="removeBoundingBox(); return false;" type="button" value="Delete" />*@
-                <button id="btnSave" class="btni btn-success disabled" onclick="saveAnnotations(); return false;"><i class="fa fa-save"></i></button>
-                <button id="btnDelete" class="btni btn-danger disabled" onclick="removeAnnotations(); return false;"><i class="fa fa-trash"></i></button>
-                <button id="btnRefresh" class="btni btn-info disabled" onclick="refreshAnnotations(); return false;"><i class="fa fa-refresh"></i></button>
-
+                <button id="btnSave" class="btni btn-success disabled" disabled onclick="saveAnnotations(); return false;"><i class="fa fa-save"></i></button>
+                <button id="btnDelete" class="btni btn-danger disabled" disabled onclick="removeAnnotations(); return false;"><i class="fa fa-trash"></i></button>
+                <button id="btnRefresh" class="btni btn-info disabled" disabled onclick="refreshAnnotations(); return false;"><i class="fa fa-refresh"></i></button>
+                <button id="btnDownload" class="btni btn-info disabled" disabled onclick="download(); return false;"><i class="fas fa-download"></i></button>
+                <a id="lnkDownloadImage" hidden class="btni btn-info" download="myImage.jpg" href="" onclick="download_img(this);"><i class='fas fa-download'></i></a>
                 @*<i title="Save" class="fa fa-save" onclick="saveBoundingBox(); return false;" style="font-size:36px;color:cornflowerblue;cursor:pointer;"></i>
         <i title="Remove" class="fa fa-remove" onclick="removeBoundingBox(); return false;" style="font-size:36px;color:red;cursor:pointer;"></i>*@
             </div>

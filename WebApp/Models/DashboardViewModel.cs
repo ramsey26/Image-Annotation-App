@@ -2,18 +2,19 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using WebApp.DTOs;
 
 namespace WebApp.Models
 {
     [Serializable]
     public class DashboardViewModel
     {
-        public MemberDataModel MemberDataModel { get; set; }
+        public UserProjectsWithPhotosDto UserProjectWithPhotosDto { get; set; }
         public FileUploadModel FileUploadModel { get; set; }
 
         public DashboardViewModel()
         {
-            MemberDataModel = new MemberDataModel();
+            UserProjectWithPhotosDto = new UserProjectsWithPhotosDto();
             FileUploadModel = new FileUploadModel(); 
         }
     }

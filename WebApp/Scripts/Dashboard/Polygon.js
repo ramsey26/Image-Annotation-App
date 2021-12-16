@@ -185,7 +185,7 @@ function handleMouseDownPolygon(e) {
                 drawPolygon();
             }
         }
-    }  
+    }
 }
 
 function handleMouseMovePolygon(e) {
@@ -259,12 +259,14 @@ function updateHiddenFieldPolygon() {
         $("#btnRefresh").removeClass("disabled");
 
         document.getElementById("btnSave").disabled = false;
+        document.getElementById("btnRefresh").disabled = false;
     }
     else {
         $("#btnSave").addClass("disabled");
         $("#btnRefresh").addClass("disabled");
 
         document.getElementById("btnSave").disabled = true;
+        document.getElementById("btnRefresh").disabled = true;
     }
 }
 

@@ -115,12 +115,12 @@ namespace WebApp.Services
             return true;
         }
 
-        public async Task<bool> UploadPhotoData(PhotoDataModel photoDataModel)
+        public async Task<bool> UploadPhotoData(PhotoDataModel photoDataModel,int projectId)
         {
             bool photoUploaded = false;
             try
             {
-                HttpResponseMessage resp = await client.PostAsJsonAsync("api/users/upload-photo", photoDataModel);
+                HttpResponseMessage resp = await client.PostAsJsonAsync($"api/photo/upload-photo/{projectId}", photoDataModel);
                 resp.EnsureSuccessStatusCode();
 
                 if (resp.IsSuccessStatusCode)
@@ -136,12 +136,12 @@ namespace WebApp.Services
             return photoUploaded;
         }
 
-        public async Task<PhotoDataModel> GetLastPhotoData()
+        public async Task<PhotoDataModel> GetLastPhotoData(int projectId)
         {
             PhotoDataModel photoData = null;
             try
             {
-                HttpResponseMessage resp = await client.GetAsync($"api/users/getLastPhoto");
+                HttpResponseMessage resp = await client.GetAsync($"api/photo/getLastPhoto/{projectId}");
 
                 resp.EnsureSuccessStatusCode();
                 if (resp.IsSuccessStatusCode)

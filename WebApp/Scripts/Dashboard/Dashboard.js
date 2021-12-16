@@ -1,16 +1,30 @@
 ﻿
-//function download() {
-//    var backgroundImage = document.getElementById("canvasImg");
+download_img = function (el) {
+    // get image URI from canvas object
+    var photoName = $("#PhotoName").val();
+    var background = new Image();
+    background.src = $("#imageSrc").val();
 
-//    var canvas2 = document.getElementById("imgCanvas");
-//    var context2 = canvas2.getContext("2d");
-//    context2.globalCompositeOperation = "destination-over";
-//    context2.drawImage(backgroundImage, 0, 0);
+    var canvas2 = document.getElementById("imgCanvas");
+    var context2 = canvas2.getContext("2d");
+    context2.globalCompositeOperation = "destination-over";
+    context2.drawImage(background, 0, 0, 640, 480);
 
-//    var dt = canvas2.toDataURL('image/jpeg');
-//    var url = dt.replace(/^data:image\/[^;]+/, 'data:application/octet-stream');
-//    this.href = url;
-//};
+    var dt = canvas2.toDataURL('image/jpeg');
+    var dataURL = dt.replace(/^data:image\/[^;]+/, 'data:application/octet-stream');
+
+    //var newTab = window.open('about:blank', 'image from canvas');
+    //newTab.document.write("<img src='" + dataURL + "' alt='from canvas'/>");
+    el.setAttribute("download", photoName);
+    el.href = dataURL;
+};
+
+function download() {
+    var linkEle = document.getElementById("lnkDownloadImage");
+    //linkEle.href = dataURL;
+
+    linkEle.click();
+}
 
 const error = "error";
 const success = "success";
@@ -68,6 +82,7 @@ function openImageInCanvas(id) {
         success: function (data) {
             $("#divCanvasViewPartial").html(data);
             InitializeRectangleAnnotation();
+            handleMouseEvents();
         }
     }).fail(function (callResult) {
         ShowAjaxFailMessage(callResult, 'An error occurred : ');
@@ -133,47 +148,28 @@ function ShowAjaxFailMessage(callResult, baseMessage) {
     alert(info);
 }
 
-function listenMouseEvents() {
+function handleMouseEvents() {
     // listen for mouse events
     $("#imgCanvas").mousedown(function (e) {
-        if (polygonFlag) {
-            handleMouseDownPolygon(e);
-        }
-        else {
-            handleMouseDown(e);
-        }
-
+        handleMouseDown(e);
     });
     $("#imgCanvas").mousemove(function (e) {
-        if (polygonFlag) {
-            handleMouseMovePolygon(e);
-        }
-        else {
-            handleMouseMove(e);
-        }
-
+        handleMouseMove(e);
     });
     $("#imgCanvas").mouseup(function (e) {
-        if (polygonFlag) {
-            handleMouseUpPolygon(e);
-        }
-        else {
-            handleMouseUp(e);
-        }
-
+        handleMouseUp(e);
     });
     $("#imgCanvas").mouseout(function (e) {
-        if (polygonFlag) {
-            handleMouseOutPolygon(e);
-        }
-        else {
-            handleMouseOut(e);
-        }
-
+        handleMouseOut(e);
     });
 }
 
 function InitializeRectangleAnnotation() {
+
+    $("#btnRect").addClass("active");
+    if ($("#btnPolygon").hasClass("active")) {
+        $("#btnPolygon").removeClass("active")
+    }
     polygonFlag = false;
     //if (!$("#btnRect").hasClass("active")) {
     //    $("#btnRect").addClass("active");
@@ -181,9 +177,9 @@ function InitializeRectangleAnnotation() {
     //    $("#btnCircle").addClass("disabled");
     //    $("#btnPolygon").addClass("disabled");
     initializeCanvasObject();
-    loadBoundingBoxes();
+   // initializeCanvasButtons();
+    refreshAnnotations();
 
-    listenMouseEvents();
     //}
     //else {
     //    $("#btnRect").removeClass("active");
@@ -193,14 +189,33 @@ function InitializeRectangleAnnotation() {
 }
 
 function InitializePolygonAnnotation() {
+
+    $("#btnPolygon").addClass("active");
+    if ($("#btnRect").hasClass("active")) {
+        $("#btnRect").removeClass("active")
+    }
+
     polygonFlag = true;
 
     initializeCanvasObject();
-   
-    loadPolygons();
+    //initializeCanvasButtons();
+    refreshAnnotations();
+}
+
+function initializeCanvasButtons() {
+    $("#btnDelete").addClass("disabled");
+    $("#btnSave").addClass("disabled");
+    $("#btnRefresh").addClass("disabled");
+    $("#btnDownload").removeClass("disabled");
+
+    document.getElementById("btnSave").disabled = true;
+    document.getElementById("btnRefresh").disabled = true;
+    document.getElementById("btnDelete").disabled = true;
+    document.getElementById("btnDownload").disabled = false;
 }
 
 function refreshAnnotations() {
+    initializeCanvasButtons();
     if (polygonFlag) {
         loadPolygons();
     }
@@ -210,10 +225,6 @@ function refreshAnnotations() {
 }
 
 function loadPolygons() {
-    $("#btnDelete").addClass("disabled");
-    $("#btnSave").addClass("disabled");
-    $("#btnRefresh").addClass("disabled");
-
     polygons = [];
     lineSegments = [];
     removedPolygons = [];
@@ -247,10 +258,8 @@ function loadPolygons() {
 }
 
 function loadBoundingBoxes() {
-
-    $("#btnDelete").addClass("disabled");
-    $("#btnSave").addClass("disabled");
-    $("#btnRefresh").addClass("disabled");
+    boxes = [];
+    removedBoxes = [];
 
     const boxData = $("#BoundingBoxData").val();
     
@@ -329,9 +338,11 @@ function savePolygons() {
                 $("#btnRefresh").addClass("disabled");
 
                 document.getElementById("btnSave").disabled = true;
+                document.getElementById("btnRefresh").disabled = true;
+
                 InitializePolygonAnnotation();
 
-                listenMouseEvents();
+                handleMouseEvents();
             }
         }).fail(function (callResult) {
             ShowAjaxFailMessage(callResult, 'An error occurred : ');
@@ -374,7 +385,10 @@ function saveBoundingBox() {
                 $("#btnRefresh").addClass("disabled");
 
                 document.getElementById("btnSave").disabled = true;
+                document.getElementById("btnRefresh").disabled = true;
+
                 InitializeRectangleAnnotation();
+                handleMouseEvents();
             }
         }).fail(function (callResult) {
             ShowAjaxFailMessage(callResult, 'An error occurred : ');
@@ -503,7 +517,7 @@ function isPolygonsEqual(a, b) {
     if (a.length != b.length) return false;
 
     for (var i = 0; i < a.length; i++) {
-        if (a[i].StartX != b[i].StartX || a[i].StartY != b[i].StartY || a[i].EndX != b[i].EndX || a[i].EndY != b[i].EndY) {
+        if (a[i].startX != b[i].startX || a[i].startY != b[i].startY || a[i].endX != b[i].endX || a[i].endY != b[i].endY) {
             return false;
         }
     }

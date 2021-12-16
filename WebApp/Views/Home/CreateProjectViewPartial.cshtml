@@ -1,0 +1,41 @@
+﻿@model WebApp.Models.UserProjectViewModel
+@using WebApp.Controllers
+
+@{
+    ViewBag.Title = "Create a new project";
+}
+
+@using (Html.BeginForm("CreateProject", "Home", FormMethod.Post, new { id = HomeController.CreateProjectForm}))
+{
+    @*@Html.AntiForgeryToken()*@
+    <h3 style="color: black"><i class='fas fa-folder-plus' style='font-size: 36px; color: rebeccapurple; padding-right: 10px;'></i>@ViewBag.Title</h3>
+
+    <div class="form-horizontal" style="padding-left:30px;padding-top:20px;text-align:left">
+
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        <div class="form-group">
+            @Html.LabelFor(model => model.ProjectName, htmlAttributes: new { @class = "control-label col-md-3", @style = "color:black;text-align: left;" })
+            <div class="col-md-9">
+                @Html.EditorFor(model => model.ProjectName, new { htmlAttributes = new { @class = "form-control", @autocomplete = "off" } })
+                @Html.ValidationMessageFor(model => model.ProjectName, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Description, htmlAttributes: new { @class = "control-label col-md-3", @style = "color:black" })
+            <div class="col-md-9">
+                @Html.TextAreaFor(model => model.Description, 2, 29, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Description, "", new { @class = "text-danger" })
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <div class="col-md-offset-2 col-md-10">
+            <button id="btnCreateProject" class="btn btn-primary" style="float:right;margin-bottom:10px;">
+                Create <span class="glyphicon glyphicon-chevron-right"></span>
+            </button>
+        </div>
+    </div>
+    //onclick = "createProject(); return false;"
+}

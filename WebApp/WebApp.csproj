@@ -191,6 +191,7 @@
     <Compile Include="DTOs\LineSegmentDto.cs" />
     <Compile Include="DTOs\PolygonDto.cs" />
     <Compile Include="DTOs\UserDto.cs" />
+    <Compile Include="DTOs\UserProjectsWithPhotosDto.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
@@ -203,6 +204,9 @@
     <Compile Include="Models\CanvasViewModel.cs" />
     <Compile Include="Models\DashboardViewModel.cs" />
     <Compile Include="Models\FileUploadModel.cs" />
+    <Compile Include="Models\IndexViewModel.cs" />
+    <Compile Include="Models\UserProjectDataModel.cs" />
+    <Compile Include="Models\UserProjectViewModel.cs" />
     <Compile Include="Models\LineSegmentDataModel.cs" />
     <Compile Include="Models\MemberDataModel.cs" />
     <Compile Include="Models\PhotoDataModel.cs" />
@@ -211,8 +215,8 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\AccountService.cs" />
     <Compile Include="Services\HttpClientService.cs" />
-    <Compile Include="Services\ImageAnnotationDataService.cs" />
     <Compile Include="Services\DashboardService.cs" />
+    <Compile Include="Services\UserProjectService.cs" />
     <Compile Include="Startup.cs" />
     <Compile Include="Utilities\AutoMapperConfiguration.cs" />
   </ItemGroup>
@@ -247,6 +251,7 @@
     <Content Include="fonts\glyphicons-halflings-regular.eot" />
     <None Include="Scripts\jquery-3.4.1.intellisense.js" />
     <Content Include="Scripts\Dashboard\Dashboard.js" />
+    <Content Include="Scripts\fontawesome.js" />
     <Content Include="Scripts\gridmvc.js" />
     <Content Include="Scripts\gridmvc.lang.ru.js" />
     <Content Include="Scripts\gridmvc.min.js" />
@@ -307,6 +312,8 @@
     <Content Include="Scripts\popper.js.map" />
     <Content Include="Scripts\popper-utils.min.js.map" />
     <Content Include="Scripts\popper-utils.js.map" />
+    <Content Include="Views\Home\CreateProjectViewPartial.cshtml" />
+    <Content Include="Views\Home\UserProjectViewPartial.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

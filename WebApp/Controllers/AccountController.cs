@@ -71,7 +71,7 @@ namespace WebApp.Controllers
                 var identity = new ClaimsIdentity(claims, "ApplicationCookie");
                 Request.GetOwinContext().Authentication.SignIn(options, identity);
 
-                return RedirectToAction("Dashboard", "Dashboard");
+                return RedirectToAction("Index", "Home");
             }
             catch(UnauthorizedAccessException ex)
             {
@@ -113,7 +113,7 @@ namespace WebApp.Controllers
                 var claims = new[]
                 {
                     new Claim(ClaimTypes.Name,userDto.Username),
-                   new Claim("AcessToken",userDto.Token),
+                    new Claim("AcessToken",userDto.Token),
                     new Claim(ClaimTypes.NameIdentifier,userDto.Username),
                     new Claim(ClaimTypes.X500DistinguishedName,"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")
                 };
@@ -121,7 +121,7 @@ namespace WebApp.Controllers
                 var identity = new ClaimsIdentity(claims, "ApplicationCookie");
                 Request.GetOwinContext().Authentication.SignIn(options, identity);
 
-                return RedirectToAction("Dashboard", "Dashboard");
+                return RedirectToAction("Index", "Home");
             }
             catch (HttpException ex)
             {
