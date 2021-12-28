@@ -3,8 +3,9 @@
 
 @*@using (Html.BeginForm("UploadFile", "Dashboard", FormMethod.Post, new { id = DashboardController.DashboardForm, encType = "multipart/form-data" }))
 {*@
+
     <div class="row">
-        <div class="col-md-6 col-md-push-2">
+        <div class="">
             <div class="form-horizontal">
                 <div class="form-group">
                     <table>
@@ -13,13 +14,15 @@
                                 @Html.TextBoxFor(m => m.FileAttach, new
                            {
                                type = "file",
+                               @webkitdirectory = "directory",
                                accept = "image/x-png,image/jpg,image/jpeg",
+                               @multiple = "multiple",
                                placeholder = Html.DisplayNameFor(m => m.FileAttach),
                                @id = "formFile",
                                @class = "form-control"
                            })
                             </td>
-                            <td><input type="submit" value="Upload" onclick="return uploadFile();" class="btn btn-danger" /></td>
+                            <td><input type="submit" value="Upload" onclick="return uploadFile(); return false;" class="btn btn-danger" /></td>
                         </tr>
                     </table>
 

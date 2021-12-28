@@ -203,6 +203,7 @@
     <Compile Include="Models\AppUser.cs" />
     <Compile Include="Models\CanvasViewModel.cs" />
     <Compile Include="Models\DashboardViewModel.cs" />
+    <Compile Include="Models\FilesViewModel.cs" />
     <Compile Include="Models\FileUploadModel.cs" />
     <Compile Include="Models\IndexViewModel.cs" />
     <Compile Include="Models\UserProjectDataModel.cs" />
@@ -314,6 +315,7 @@
     <Content Include="Scripts\popper-utils.js.map" />
     <Content Include="Views\Home\CreateProjectViewPartial.cshtml" />
     <Content Include="Views\Home\UserProjectViewPartial.cshtml" />
+    <Content Include="Views\Dashboard\FilesViewPartial.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

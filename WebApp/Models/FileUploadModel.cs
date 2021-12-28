@@ -12,7 +12,7 @@ namespace WebApp.Models
     {
         [Required]
         [DataType(DataType.Upload)]
-        [Display(Name ="Choose File")]
+        [Display(Name ="Choose Directory")]
         [AllowExtensions(Extensions ="png,jpg,jpeg",ErrorMessage = "Please select only supported files .png/.jpg/.jpeg")]
         public HttpPostedFileBase FileAttach { get; set; }
     }

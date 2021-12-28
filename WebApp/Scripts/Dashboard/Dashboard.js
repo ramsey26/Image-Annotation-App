@@ -1,4 +1,5 @@
-﻿
+﻿$formData = new FormData();
+
 download_img = function (el) {
     // get image URI from canvas object
     var photoName = $("#PhotoName").val();
@@ -71,7 +72,9 @@ function loadGridView(message) {
     });
 }
 
-function openImageInCanvas(id) {
+function openImageInCanvas(id,elementId) {
+   // $('.spinner').css('display', 'block');
+
     var imageFileUrl = $("#ImageFileUrl").val();
 
     $.ajax({
@@ -80,21 +83,51 @@ function openImageInCanvas(id) {
         contentType: 'application/json; charset=utf-8',
         type: 'POST',
         success: function (data) {
+          //  $('.spinner').css('display', 'none');
+
             $("#divCanvasViewPartial").html(data);
             InitializeRectangleAnnotation();
             handleMouseEvents();
+
+            if (elementId != undefined) {
+                $("#hdnPreviousPhotoId").val(elementId - 1);
+                $("#hdnNextPhotoId").val(elementId + 1);
+            }
+        
         }
     }).fail(function (callResult) {
         ShowAjaxFailMessage(callResult, 'An error occurred : ');
     });
+
+    return false;
+}
+
+function createLinkNode(keyValPair, elementId) {
+    //Create LI node and insert into UL child 
+    var node = document.createElement("LI");
+
+    var a = document.createElement('a');
+
+    var textnode = document.createTextNode(keyValPair.fileName);
+    a.appendChild(textnode);
+    //a.onClick = insertFile(keyValPair.fileKey);
+    a.setAttribute("onclick", "insertFile(" + "'" + keyValPair.fileKey + "'," + elementId + ")");
+    a.setAttribute("style", "cursor:pointer");
+    a.setAttribute("class", "list-group-item");
+    a.setAttribute("id", elementId);
+
+    node.appendChild(a);
+    document.getElementById("listFiles").appendChild(node);
 }
 
 function uploadFile() {
 
     $('.spinner').css('display', 'block');
 
+    var countOfPhotosSaved = $("#hdnPhotoCount").val() == "" ? 0 : parseInt($("#hdnPhotoCount").val());
+
     var form = $("DashboardForm");
-    var uploadFileUrl = $("#UploadFileUrl").val();
+    var uploadFileNameUrl = $("#UploadFileNameUrl").val();
 
     var $file = document.getElementById('formFile');
     var val = $("#formFile").val();
@@ -103,35 +136,107 @@ function uploadFile() {
         return false;
     }
     else {
+        var countImageFiles = 0;
 
-        $formData = new FormData();
+        var keyValPair = {
+            fileKey: '',
+            fileName: ''
+        };
 
         if ($file.files.length > 0) {
             for (var i = 0; i < $file.files.length; i++) {
-                $formData.append('file-' + i, $file.files[i]);
+
+                //Allow only image files to upload 
+                if ($file.files[i].type == "image/jpeg" || $file.files[i].type == "image/x-png" ||
+                    $file.files[i].type == "image/jpg") {
+                    $formData.append('file-' + i, $file.files[i]);
+
+                    keyValPair = {
+                        fileKey: 'file-' + i,
+                        fileName: $file.files[i].name
+                    };
+
+                    var elementId = countOfPhotosSaved + countImageFiles + 1;
+                    //arrFileNames.push(keyValPair);
+                    createLinkNode(keyValPair, elementId);
+                    countImageFiles++;
+                }
             }
         }
 
-        $.ajax({
-            url: uploadFileUrl,
-            type: 'POST',
-            data: $formData,
-            dataType: 'json',
-            contentType: false,
-            processData: false,
-            success: function (data) {
+        $('.spinner').css('display', 'none');
 
-                var message = "Photo uploaded successfully";
-                showToastrJs(success, message);
+        var canvasExists = document.getElementById("imgCanvas");
 
-                $("#divGridViewPartial").html(data);
-            
-            },
-            error: function (callResult) {
-                ShowAjaxFailMessage(callResult, 'An error occurred : ');
-            }
-        });
+        if (canvasExists == null) {
+            //After creating link nodes, upload first photo from the uploaded files
+            insertFile('file-0');  //key for first file is "file-0"
+        }
+
+        var totalCount = countOfPhotosSaved + countImageFiles;
+
+        document.getElementById("headerPhotoCount").innerText = totalCount;
+
+        $("#hdnPreviousPhotoId").val(0);
+        $("#hdnNextPhotoId").val(countImageFiles > 1 ? 2 : 0);
+
+        //$.ajax({
+        //    url: uploadFileNameUrl,
+        //    type: 'POST',
+        //    data: '{filesViewModels:' + JSON.stringify(arrFileNames) + '}',
+        //    contentType: 'application/json; charset=utf-8',
+        //    success: function (data) {
+
+        //        $("#divFilesViewPartial").html(data);
+        //        //var message = "Photo uploaded successfully";
+        //        //showToastrJs(success, message);
+
+        //        //$("#divGridViewPartial").html(data);
+        //        $('.spinner').css('display', 'none');
+        //    },
+        //    error: function (callResult) {
+        //        ShowAjaxFailMessage(callResult, 'An error occurred : ');
+        //    }
+        //});
     }
+    return false;
+}
+
+function insertFile(fileKey,elementId) {
+
+    $('.spinner').css('display', 'block');
+    var formData = new FormData();
+    var fileData = $formData.get(fileKey);
+    formData.append(fileKey, fileData);
+
+    var insertFileUrl = $("#InsertFileUrl").val();
+
+    $.ajax({
+        url: insertFileUrl,
+        type: 'POST',
+        data: formData,
+        contentType: false,
+        processData: false,
+        success: function (data) {
+            $('.spinner').css('display', 'none');
+            if (data.fileId > -1) {
+                var message = "Photo uploaded successfully.";
+
+                if (data.IsFileUploaded) {
+                    showToastrJs(success, message);
+                }
+
+                openImageInCanvas(data.fileId, elementId);
+            }
+            else {
+                var message = "Please upload image file.";
+                showToastrJs(error, message);
+            }
+        },
+        error: function (callResult) {
+            ShowAjaxFailMessage(callResult, 'An error occurred : ');
+        }
+    });
 }
 
 function ShowAjaxFailMessage(callResult, baseMessage) {
@@ -542,4 +647,36 @@ function toggleSaveButton() {
     else {
         $("#btnSave").addClass("disabled");
     }
+}
+
+function movePrevious() {
+    var prevValue = $("#hdnPreviousPhotoId").val();
+
+    if (prevValue > 0) {
+
+        var link = document.getElementById(prevValue);
+        if (link != null) {
+            $("#hdnPreviousPhotoId").val(parseInt(prevValue) - 1);
+            $("#hdnNextPhotoId").val(parseInt(prevValue) + 1);
+
+            link.click();
+        }
+    }
+    return false;
+}
+
+function moveNext() {
+    var nextValue = $("#hdnNextPhotoId").val();
+
+    if (nextValue > 1) {
+        var link = document.getElementById(nextValue);
+
+        if (link != null) {
+            $("#hdnPreviousPhotoId").val(parseInt(nextValue) - 1);
+            $("#hdnNextPhotoId").val(parseInt(nextValue) + 1);
+
+            link.click();
+        }
+    }
+    return false;
 }

@@ -57,26 +57,49 @@
         font-family: sans-serif;
     }
 
+    .borderRounded {
+        border-radius: 25px;
+        border: 2px solid #73AD21;
+        padding: 2px;
+        width:auto;
+    }
 
+    .projectNameDiv {
+        height: 35px;
+        padding: 2px 5px 2px 5px;
+        margin-left:30px;
+    }
+
+    .uploadFileDiv {
+        height: 35px;
+        padding: 0px 80px 30px 15px;
+        float:right;
+    }
 </style>
 
 
 @using (Html.BeginForm("Dashboard", "Dashboard", FormMethod.Post, new { id = DashboardController.DashboardForm, encType = "multipart/form-data" }))
 {
     @Html.Hidden("GetGridViewDataUrl", Url.Action("GetGridViewData", "Dashboard"))
-    @Html.Hidden("UploadFileUrl", Url.Action("UploadFile", "Dashboard"))
+    @Html.Hidden("UploadFileNameUrl", Url.Action("UploadFileNames", "Dashboard"))
     @Html.Hidden("ImageFileUrl", Url.Action("GetCanvasImage", "Dashboard"))
     @Html.Hidden("SaveBoundingBoxUrl", Url.Action("SaveBoundingBoxData", "Dashboard"))
     @Html.Hidden("SavePolygonUrl",Url.Action("SavePolygonData","Dashboard"))
-
+    @Html.Hidden("InsertFileUrl",Url.Action("UploadFile", "Dashboard"))
     <div style="margin-top:10px;">
         @if (Model.UserProjectWithPhotosDto.ProjectName != null)
         {
             <div id="divUploadFilePanel">
-                @Html.Partial("UploadFileViewPartial", Model.FileUploadModel)
+                <div class="container borderRounded">
+                        <div class="projectNameDiv col-md-6">
+                            <label style="color: white; font-family: sans-serif;">Project Name: @Model.UserProjectWithPhotosDto.ProjectName</label>
+                        </div>
+                        <div class="uploadFileDiv">
+                            @Html.Partial("UploadFileViewPartial", Model.FileUploadModel)
+                        </div>
+                </div>
             </div>
-
-            <div id="divImageAnnotationPanel">
+            <div id="divImageAnnotationPanel" style="margin-top:10px;">
                 @Html.Partial("ImageAnnotationPartial", Model.UserProjectWithPhotosDto)
             </div>
         }

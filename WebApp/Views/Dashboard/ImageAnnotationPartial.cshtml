@@ -1,78 +1,178 @@
 ﻿@model WebApp.DTOs.UserProjectsWithPhotosDto
+@using WebApp.Models
 
-@{ 
+@{
     int noOfImages = Model.Photos.Count();
 }
 <style>
     .btni {
-        background-color:dodgerblue;
+        background-color: dodgerblue;
         border: none;
         color: white;
         padding: 12px 16px;
         font-size: 16px;
         cursor: pointer;
     }
+
         .btni:hover {
             background-color: RoyalBlue;
         }
-</style>
-<div class="mainContainer">
-    <div class="leftDiv">
-        @if (noOfImages > 0)
-        {
-           
-            <img id="btnRect" src="~/UploadedFiles/VioRect.png" class="btn" data-placement="right" title="Draw Bounding box on image"
-                 style="margin-left:10px;margin-top:20px;cursor:pointer;" width="70" height="70" onclick="InitializeRectangleAnnotation(); return false;" />
-            <hr />
-            <img id="btnCircle" src="~/UploadedFiles/VioCircle.png" class="btn" data-placement="right" title="Draw Circle on image"
-                 style="margin-left:10px;cursor:pointer;display:none;" width="70" height="70" />
 
-            @*<hr />*@
-            <img id="btnPolygon" src="~/UploadedFiles/VioPolygon.png" class="btn" data-placement="right" title="Draw Polygon on image"
-                 style="margin-left:10px;cursor:pointer;" width="70" height="70" onclick="InitializePolygonAnnotation(); return false;" />
-            <hr />
+    .divLables {
+        height: 50%;
+        border: 1px solid red;
+    }
+
+    .divFiles {
+        border: 1px solid green;
+        background-color: whitesmoke;
+        height:50%;
+    }
+
+    .divFilesViewPartial {
+        height: 90%;
+        border: 1px solid green;
+        background-color: whitesmoke;
+        overflow-y: scroll;
+    }
+
+    .nextprev {
+        font-size: 18px;
+        font-family: 'Source Sans Pro', sans-serif;
+        padding-left: 2px;
+        padding-right: 2px;
+        border: 1px solid #cccccc;
+        border-radius: 5px;
+        margin-top: 10px;
+        float: right;
+    }
+
+    .w3-left
+    {
+        background-color: #04AA6D;
+        color: #ffffff;
+        border-color: #04AA6D;
+    }
+    
+
+</style>
+<script>
+    $(document).ready(function () {
+        var firstPhotoId = $("#hdnPhotoId").val();
+        if (firstPhotoId != "") {
+
+          //  $("#hdnPreviousPhotoId").val(-1);
+          //  $("#hdnNextPhotoId").val(2); //Photo link tags element Id always start with 1 so next would be 2 
+
+            openImageInCanvas(firstPhotoId);
         }
+    });
+
+    function openFolder() {
+        debugger;
+        $("#formFile").click();
+    }
+</script>
+<div class="mainContainer">
+    @Html.Hidden("hdnPhotoId", Model.Photos?.FirstOrDefault()?.Id)
+    @Html.Hidden("hdnPhotoCount", Model.Photos?.Count())
+    @Html.Hidden("hdnPreviousPhotoId", 0)  
+    @Html.Hidden("hdnNextPhotoId", noOfImages > 1 ? 2 : 0) @*//If there are more than 1 photos then set next elementId equal to 2*@
+
+    <div class="leftDiv">
+        @*@if (noOfImages > 0)
+            {*@
+        <div hidden>
+            <button class="btn" onclick="openFolder(); return false;"
+                    style="margin-left: 10px; margin-top: 20px; cursor: pointer; background: cadetblue; border: 1px solid darkslategrey;" width="70" height="70">
+                <i class='fas fa-folder-open' style='font-size: 40px; color: purple;'></i>
+            </button>
+            <h5 style="margin-left:5px;color:white;">Upload Files</h5>
+        </div>
+
+        <img id="btnRect" src="~/UploadedFiles/VioRect.png" class="btn" data-placement="right" title="Draw Bounding box on image"
+             style="margin-left:10px;margin-top:20px;cursor:pointer;" width="70" height="70" onclick="InitializeRectangleAnnotation(); return false;" />
+        <hr />
+        <img id="btnCircle" src="~/UploadedFiles/VioCircle.png" class="btn" data-placement="right" title="Draw Circle on image"
+             style="margin-left:10px;cursor:pointer;display:none;" width="70" height="70" />
+
+        @*<hr />*@
+        <img id="btnPolygon" src="~/UploadedFiles/VioPolygon.png" class="btn" data-placement="right" title="Draw Polygon on image"
+             style="margin-left:10px;cursor:pointer;" width="70" height="70" onclick="InitializePolygonAnnotation(); return false;" />
+        <hr />
+        @*}*@
     </div>
     <div class="midDiv">
         <div id="divBtns">
-            @if (noOfImages > 0)
-            {
+            @*@if (noOfImages > 0)
+                {*@
             <div style="margin-top: 5px; float: left; border: 2px solid darkorchid;">
                 @*<input id="btnSave" class="btn btn-success disabled" style="cursor: pointer;" onclick="saveBoundingBox(); return false;" type="button" value="Save" />
-        <input id="btnDelete" class="btn btn-danger disabled" style="cursor: pointer;" onclick="removeBoundingBox(); return false;" type="button" value="Delete" />*@
+                    <input id="btnDelete" class="btn btn-danger disabled" style="cursor: pointer;" onclick="removeBoundingBox(); return false;" type="button" value="Delete" />*@
                 <button id="btnSave" class="btni btn-success disabled" disabled onclick="saveAnnotations(); return false;"><i class="fa fa-save"></i></button>
                 <button id="btnDelete" class="btni btn-danger disabled" disabled onclick="removeAnnotations(); return false;"><i class="fa fa-trash"></i></button>
                 <button id="btnRefresh" class="btni btn-info disabled" disabled onclick="refreshAnnotations(); return false;"><i class="fa fa-refresh"></i></button>
                 <button id="btnDownload" class="btni btn-info disabled" disabled onclick="download(); return false;"><i class="fas fa-download"></i></button>
                 <a id="lnkDownloadImage" hidden class="btni btn-info" download="myImage.jpg" href="" onclick="download_img(this);"><i class='fas fa-download'></i></a>
+
                 @*<i title="Save" class="fa fa-save" onclick="saveBoundingBox(); return false;" style="font-size:36px;color:cornflowerblue;cursor:pointer;"></i>
-        <i title="Remove" class="fa fa-remove" onclick="removeBoundingBox(); return false;" style="font-size:36px;color:red;cursor:pointer;"></i>*@
+                    <i title="Remove" class="fa fa-remove" onclick="removeBoundingBox(); return false;" style="font-size:36px;color:red;cursor:pointer;"></i>*@
             </div>
-                @*<div id="divBtn" style="margin-top:5px;float:right">
-                    <input id="btnPrevious" class="btn btn-success" type="button" value="Previous" />
-                    <input id="btnNext" class="btn btn-danger" type="button" value="Next" />
-                </div>*@
-            }
+            <div id="divBtn" class="nextprev">
+                <button id="btnPrevious" class="btn w3-left" onclick="movePrevious(); return false;">❮ Previous</button>
+                <button id="btnNext" class="btn w3-left" onclick="moveNext(); return false;">Next ❯</button>
+            </div>
+
         </div>
-      
+
         <div id="divCanvasViewPartial" class="center" style="margin-top:50px;">
 
             <div id="divNoImage">
-                <img src="~/UploadedFiles/no-image.jpg" style="width: 640px; height: 480px; background-repeat: inherit; display: block;"/>
+                <img src="~/UploadedFiles/no-image.jpg" style="width: 640px; height: 480px; background-repeat: inherit; display: block;" />
             </div>
             @*@if (noOfImages > 0)
-        {
-            @Html.Partial("CanvasViewPartial", Model.Photos.First())
-        }*@
+                {
+                    @Html.Partial("CanvasViewPartial",)
+                }*@
         </div>
 
     </div>
     <div class="rightDiv">
-        @*@if (Model.Photos != null && noOfImages > 0)
-        {*@
-        <div id="divGridViewPartial" style="width: 100%; height: 100%;">
-            @Html.Partial("GridViewPartial", Model.Photos)
+        @*<div id="divGridViewPartial" style="width: 100%; height: 100%;">
+                @Html.Partial("GridViewPartial", Model.Photos)
+            </div>*@
+
+        <div class="divLables">
+
         </div>
-        @*}*@
+        <div class="divFiles">
+            <div style="height:10%">
+                <label style="color: cadetblue;float:left;margin-left:5px;">Photo List</label>
+                <label id="headerPhotoCount" style="color: black; margin-left: 5px;margin-right:5px; float: right;">@noOfImages</label>
+                <label style="color: cadetblue;float: right;margin-left:0px">Total Photos:</label>
+
+            </div>
+            <div class="divFilesViewPartial">
+                <ul id="listFiles" style="list-style-type: none;padding:0;margin:0;">
+                    @if (Model.Photos != null)
+                    {
+                        for (int i = 0; i < Model.Photos.Count(); i++)
+                        {
+                            {
+                                var id = i + 1;
+                                string elementId = Convert.ToString(id);
+
+                            <li>
+                                <a id=@elementId href="" class="list-group-item" onclick='openImageInCanvas("@Model.Photos[i].Id",@elementId); return false;'>
+                                    @Model.Photos[i].FileName
+                                </a>
+                            </li>
+                            }
+                        }
+                    }
+                </ul>
             </div>
         </div>
+
+    </div>
+</div>

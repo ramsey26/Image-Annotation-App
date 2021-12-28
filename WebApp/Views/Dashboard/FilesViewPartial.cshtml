@@ -1,0 +1,14 @@
+﻿@model IEnumerable <WebApp.Models.FilesViewModel>
+<div>
+    <ul style="">
+        @foreach (var file in Model)
+        {
+        <li>
+            <a href="" class="list-group-item" onclick="@file.FileKey">
+                @file.FileName <span class="glyphicon glyphicon-chevron-right"></span>
+            </a>
+        </li>
+        }
+    </ul>
+</div>
+
