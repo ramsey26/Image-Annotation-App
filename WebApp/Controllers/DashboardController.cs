@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -24,6 +25,7 @@ namespace WebApp.Controllers
         public const string SessionKeyCanvasData = "CanvasData";
         public const string GeneratedImagesVirtualPath = "~/GeneratedImages/";
         public const string SessionProjectKey = "ProjectKey";
+        public const string SessionLablesKey = "LabelKey";
 
         public UserSession _userSession = null;
         DashboardService dashboardService;
@@ -40,7 +42,7 @@ namespace WebApp.Controllers
         public async Task<ActionResult> Dashboard(string projectName)
         {
             Session[SessionProjectKey] = projectName;
-
+          
             UserProjectsWithPhotosDto userProjectsWithPhotosDto;
 
             DashboardViewModel dashboardViewModel = new DashboardViewModel();
@@ -70,13 +72,6 @@ namespace WebApp.Controllers
             return View(dashboardViewModel);
         }
 
-        [ActionName("UploadFileNames")]
-        [Route("UploadFileNames")]
-        public ActionResult UploadFileNames(List<FilesViewModel> filesViewModels)
-        {
-            return PartialView("FilesViewPartial", filesViewModels);
-        }
-
         [ActionName("UploadFile")]
         [Route("UploadFile")]
         public async Task<ActionResult> UploadFile()
@@ -84,7 +79,7 @@ namespace WebApp.Controllers
             int photoId = -1;
             HttpPostedFileBase uploadedFile;
             List<PhotoDataModel> photoDataModels = new List<PhotoDataModel>();
-            FileData uploadFileResponse = null;
+            SavedData uploadFileResponse = null;
 
             try
             {
@@ -111,10 +106,10 @@ namespace WebApp.Controllers
                 
                 if (existingPhotoDataModel != null)
                 {
-                    uploadFileResponse = new FileData()
+                    uploadFileResponse = new SavedData()
                     {
-                        fileId = existingPhotoDataModel.Id,
-                        IsFileUploaded = false
+                        Id = existingPhotoDataModel.Id,
+                        IsSaved = false
                     };
                     return Json(uploadFileResponse);
                 }
@@ -123,10 +118,10 @@ namespace WebApp.Controllers
 
                 if (fileExt != ".jpeg" && fileExt != ".jpg" && fileExt != ".png")
                 {
-                    uploadFileResponse = new FileData()
+                    uploadFileResponse = new SavedData()
                     {
-                        fileId = -1,
-                        IsFileUploaded = false
+                        Id = -1,
+                        IsSaved = false
                     };
                     return Json(uploadFileResponse);
                 }
@@ -173,10 +168,10 @@ namespace WebApp.Controllers
             }
 
             //return PartialView("GridViewPartial", photoDataModels);
-            uploadFileResponse = new FileData()
+            uploadFileResponse = new SavedData()
             {
-                fileId = photoId,
-                IsFileUploaded = true
+                Id = photoId,
+                IsSaved = true
             };
             return Json(uploadFileResponse);
         }
@@ -303,11 +298,135 @@ namespace WebApp.Controllers
                 throw new Exception(ex.Message);
             }
         }
+
+        [ActionName("GetAddLablesPartial")]
+        [Route("GetAddLablesPartial")]
+        public ActionResult GetAddLablesPartial(string labelId)
+        {
+            try
+            {
+                TempData["uid"] = labelId;
+                return PartialView("AddLabelsParital");
+            }
+            catch(Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+
+        [ActionName("SaveLabelData")]
+        [Route("SaveLabelData")]
+        public async Task<ActionResult> SaveLabelData(LabelsDataModel labelDataModel)
+        {
+            SavedData resp;
+
+            string sessionProjectName = (string)Session[SessionProjectKey];
+            var dashboardData = (UserProjectsWithPhotosDto)Session[sessionProjectName];
+
+            try
+            {
+                //Logic to call API service and save label to db
+          
+                if (dashboardData.Labels == null)
+                {
+                    dashboardData.Labels = new List<LabelsDataModel>();
+                }
+                //Add Label
+                if (labelDataModel.Id == 0)
+                {
+                    if (dashboardData.Labels.Find(x => x.LabelName == labelDataModel.LabelName) == null)
+                    {
+                        //var label = new LabelsDataModel()
+                        //{
+                        //    Id = listLabels.Count + 1,
+                        //    LabelName = labelDataModel.LabelName
+                        //};
+                        bool isSuccess = await dashboardService.AddLabelsData(labelDataModel);
+                        if (isSuccess)
+                        {
+                            dashboardData.Labels = await dashboardService.GetLabelsByUserProjectId(labelDataModel.UserProjectId);
+                            Session[sessionProjectName] = dashboardData;
+                        }
+                        
+                        //After saving changes get Id of saved label
+                        resp = new SavedData()
+                        {
+                            Id = dashboardData.Labels.Find(x => x.LabelName == labelDataModel.LabelName).Id,
+                            IsSaved = true
+                        };
+                        return Json(resp);
+                    }
+                }
+                //Edit Label
+                else if (labelDataModel.Id > 0)
+                {
+                    if (dashboardData.Labels.Find(x => x.LabelName == labelDataModel.LabelName) == null)
+                    {
+                        var editLabel = dashboardData.Labels.FirstOrDefault(x => x.Id == labelDataModel.Id);
+                        editLabel.LabelName = labelDataModel.LabelName;
+                        //Edit
+                        bool isSuccess = await dashboardService.UpdateLabelsData(editLabel);
+                        if (isSuccess)
+                        {
+                           
+                            dashboardData.Labels = await dashboardService.GetLabelsByUserProjectId(labelDataModel.UserProjectId);
+                            Session[sessionProjectName] = dashboardData;
+                        }
+
+                        //After saving changes get Id of saved label
+                        resp = new SavedData()
+                        {
+                            Id = labelDataModel.Id,
+                            IsSaved = true
+                        };
+                        return Json(resp);
+                    }
+                }
+                resp = new SavedData()
+                {
+                    Id = -1,
+                    IsSaved = false
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+    
+            return Json(resp);
+        }
+
+        [ActionName("DeleteLabelData")]
+        [Route("DeleteLabelData")]
+        public async Task<ActionResult> DeleteLabelData(int labelId)
+        {
+            string sessionProjectName = (string)Session[SessionProjectKey];
+            var dashboardData = (UserProjectsWithPhotosDto)Session[sessionProjectName];
+
+            var label = dashboardData.Labels.FirstOrDefault(x => x.Id == labelId);
+
+            //Delete
+            bool isSuccess = await dashboardService.DeleteLabelsData(label);
+            if (isSuccess)
+            {
+                dashboardData.Labels = await dashboardService.GetLabelsByUserProjectId(label.UserProjectId);
+                Session[sessionProjectName] = dashboardData;
+            }
+
+            SavedData savedData = new SavedData()
+            {
+                Id = -1,
+                IsSaved = true
+            };
+
+            return Json(savedData);
+        }
     }
 
-    class FileData
+    class SavedData
     {
-        public int fileId { get; set; }
-        public bool IsFileUploaded { get; set; }
+        public int Id { get; set; }
+        public bool IsSaved { get; set; }
     }
+
 }

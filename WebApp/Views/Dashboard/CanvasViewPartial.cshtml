@@ -30,8 +30,12 @@
     @Html.Hidden("ClientSideBoundingBoxData")
     @Html.Hidden("ClientSidePolygonData")
     @Html.Hidden("PhotoId", Model.PhotoDataModel.Id)
-    @Html.Hidden("PhotoName",Model.PhotoDataModel.FileName)
+    @Html.Hidden("PhotoName", Model.PhotoDataModel.FileName)
     @Html.Hidden("imageSrc", @VirtualPathUtility.ToAbsolute(Model.PhotoDataModel.ImageVirtualPath))
+    @Html.Hidden("selectedLabelId")
+    @Html.Hidden("hdnTempBox")
+    @Html.Hidden("hdnTempPolygon")
 
     <canvas id="imgCanvas" width=640 height=480></canvas>
+
 </div>

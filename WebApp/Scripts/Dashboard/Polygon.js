@@ -24,7 +24,7 @@ let clickedPolygon = {
 //const DeleteAct = "D";
 
 class Polygon {
-    constructor(id,polygonNo, startX, startY, endX, endY, photoId,action) {
+    constructor(id, polygonNo, startX, startY, endX, endY, photoId, action, labelId) {
         this.id = id;
         this.polygonNo = polygonNo;
         this.startX = startX;
@@ -33,6 +33,7 @@ class Polygon {
         this.endY = endY;
         this.photoId = photoId;
         this.action = action;
+        this.labelId = labelId;
     }
 }
 
@@ -60,7 +61,12 @@ function drawPolygon() {
         var p3 = lineSegments[i].x2;
         var p4 = lineSegments[i].y2;
 
-        ctx.strokeStyle = "#ff0000";
+        var polygonNo = lineSegments[i].polygonNo;
+        var polygon = polygons.filter((poly) => {
+            return poly.polygonNo == polygonNo;
+        });
+
+        ctx.strokeStyle = polygon.length > 0 ? getStrokeColor(polygon[0].labelId) || "#ff0000" : "#ff0000";
         ctx.beginPath();
         ctx.moveTo(p1, p2);
         ctx.lineTo(p3, p4);
@@ -121,7 +127,7 @@ function handleMouseDownPolygon(e) {
             startYP = parseFloat(e.clientY - offsetYResult);
 
             var polygonNo = polygons.length == 0 ? 0 : polygons[polygons.length - 1].polygonNo + 1;
-            iPolygon = new Polygon(null, polygonNo, startXP, startYP, startXP, startYP, photoId, AddAct);
+            iPolygon = new Polygon(null, polygonNo, startXP, startYP, startXP, startYP, photoId, AddAct,null);
 
             if (checkPolygonOverlap(startXP, startYP)) {
 
@@ -142,6 +148,8 @@ function handleMouseDownPolygon(e) {
                 $("#btnDelete").addClass("disabled");
                 document.getElementById("btnDelete").disabled = true;
 
+                $("#btnOpenModal").addClass("disabled");
+                document.getElementById("btnOpenModal").disabled = true;
             }          
         }
         else {
@@ -159,7 +167,7 @@ function handleMouseDownPolygon(e) {
                 var lastLine = new LineSegment(null, iPolygon.polygonNo, iPolygon.startX, iPolygon.startY, startXP, startYP);
                 lineSegments.push(lastLine);
 
-                polygons.push(iPolygon);
+               // polygons.push(iPolygon);
                 mouseup = false;
                 startXP = null;
                 startYP = null;
@@ -167,9 +175,14 @@ function handleMouseDownPolygon(e) {
                 drawNewPolygon = true;
                 createDot = false;
 
-                updateHiddenFieldPolygon();
+              //  updateHiddenFieldPolygon();
 
-                drawPolygon();
+              //  drawPolygon();
+
+                $("#hdnTempPolygon").val(JSON.stringify(iPolygon));
+                $("#selectedLabelId").val("-1");
+
+                openModal('A'); //Open labels modal to select a label
             }
             else {
 
@@ -346,4 +359,11 @@ function drawCirclesOnSelectedPolygon() {
 
     $("#btnDelete").removeClass("disabled");
     document.getElementById("btnDelete").disabled = false;
+
+    $("#btnOpenModal").removeClass("disabled");
+    document.getElementById("btnOpenModal").disabled = false;
+
+    $("#selectedLabelId").val(polygons[clickedPolygon.indx].labelId);
+
+    $("#hdnTempPolygon").val(JSON.stringify(polygons[clickedPolygon.indx]));
 }

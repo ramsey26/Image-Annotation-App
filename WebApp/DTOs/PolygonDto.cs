@@ -14,6 +14,7 @@ namespace WebApp.DTOs
         public Decimal EndX { get; set; }
         public Decimal EndY { get; set; }
         public string Action { get; set; }
+        public int? LabelId { get; set; }
         public ICollection<LineSegmentDto> LineSegments { get; set; }
     }
 }

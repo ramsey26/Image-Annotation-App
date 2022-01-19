@@ -15,6 +15,7 @@ namespace WebApp.Models
         public Decimal EndY { get; set; }
         public int PhotoId { get; set; }
         public string Action { get; set; }
+        public int? LabelId { get; set; }
         public ICollection<LineSegmentDataModel> LineSegments { get; set; }
     }
 }

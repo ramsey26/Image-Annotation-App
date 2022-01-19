@@ -60,7 +60,7 @@
     .borderRounded {
         border-radius: 25px;
         border: 2px solid #73AD21;
-        padding: 2px;
+        padding: 3px;
         width:auto;
     }
 
@@ -72,8 +72,11 @@
 
     .uploadFileDiv {
         height: 35px;
-        padding: 0px 80px 30px 15px;
+        padding: 0px 50px 30px 15px;
         float:right;
+    }
+    .hideBtn {
+        display: none;
     }
 </style>
 
@@ -81,22 +84,26 @@
 @using (Html.BeginForm("Dashboard", "Dashboard", FormMethod.Post, new { id = DashboardController.DashboardForm, encType = "multipart/form-data" }))
 {
     @Html.Hidden("GetGridViewDataUrl", Url.Action("GetGridViewData", "Dashboard"))
-    @Html.Hidden("UploadFileNameUrl", Url.Action("UploadFileNames", "Dashboard"))
     @Html.Hidden("ImageFileUrl", Url.Action("GetCanvasImage", "Dashboard"))
     @Html.Hidden("SaveBoundingBoxUrl", Url.Action("SaveBoundingBoxData", "Dashboard"))
-    @Html.Hidden("SavePolygonUrl",Url.Action("SavePolygonData","Dashboard"))
-    @Html.Hidden("InsertFileUrl",Url.Action("UploadFile", "Dashboard"))
+    @Html.Hidden("SavePolygonUrl", Url.Action("SavePolygonData", "Dashboard"))
+    @Html.Hidden("InsertFileUrl", Url.Action("UploadFile", "Dashboard"))
+    @Html.Hidden("AddLabelViewUrl", Url.Action("GetAddLablesPartial", "Dashboard"))
+    @Html.Hidden("SaveLabelUrl", Url.Action("SaveLabelData", "Dashboard"))
+    @Html.Hidden("DeleteLabelDataUrl", Url.Action("DeleteLabelData", "Dashboard"))
+    @Html.Hidden("UserProjectId",Model.UserProjectWithPhotosDto.Id)
+
     <div style="margin-top:10px;">
         @if (Model.UserProjectWithPhotosDto.ProjectName != null)
         {
             <div id="divUploadFilePanel">
                 <div class="container borderRounded">
-                        <div class="projectNameDiv col-md-6">
-                            <label style="color: white; font-family: sans-serif;">Project Name: @Model.UserProjectWithPhotosDto.ProjectName</label>
-                        </div>
-                        <div class="uploadFileDiv">
-                            @Html.Partial("UploadFileViewPartial", Model.FileUploadModel)
-                        </div>
+                    <div class="projectNameDiv col-md-6">
+                        <h4 style="color: white; font-family: system-ui;float:left">Dashboard: @Model.UserProjectWithPhotosDto.ProjectName</h4>
+                    </div>
+                    <div class="uploadFileDiv">
+                        @Html.Partial("UploadFileViewPartial", Model.FileUploadModel)
+                    </div>
                 </div>
             </div>
             <div id="divImageAnnotationPanel" style="margin-top:10px;">

@@ -13,5 +13,6 @@ namespace WebApp.DTOs
         public string Description { get; set; }
         public DateTime DateCreated { get; set; }
         public List<PhotoDataModel> Photos { get; set; }
+        public List<LabelsDataModel> Labels { get; set; }
     }
 }

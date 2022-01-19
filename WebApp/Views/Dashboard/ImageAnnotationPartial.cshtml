@@ -18,10 +18,6 @@
             background-color: RoyalBlue;
         }
 
-    .divLables {
-        height: 50%;
-        border: 1px solid red;
-    }
 
     .divFiles {
         border: 1px solid green;
@@ -53,11 +49,33 @@
         color: #ffffff;
         border-color: #04AA6D;
     }
-    
 
+    .divLabels {
+        height: 50%;
+        border: 1px solid lightseagreen;
+        background-color: #a9a9a9;
+    }
+
+    .labelsHeader {
+        padding:2px;
+        height: 12%;
+        background-color: #a9a9a9;
+    }
+
+    .labelsBody {
+        height: 88%;
+        overflow-y: scroll;
+        background-color: whitesmoke;
+    }
+    .wrapperSelectDiv {
+        width: 200px;
+        padding: 20px;
+        height: 150px;
+    }
 </style>
 <script>
     $(document).ready(function () {
+    
         var firstPhotoId = $("#hdnPhotoId").val();
         if (firstPhotoId != "") {
 
@@ -66,17 +84,161 @@
 
             openImageInCanvas(firstPhotoId);
         }
+
+        $('#btnSaveModal').click(function () {
+            debugger;
+            const selectedValue = $("#selectedLabelId").val();
+
+            if (selectedValue != "") {
+
+                if (polygonFlag) {
+                    const jsonObj = JSON.parse($("#hdnTempPolygon").val());
+
+                    let tempPolygon = new Polygon(jsonObj.id, jsonObj.polygonNo, jsonObj.startX, jsonObj.startY,
+                        jsonObj.endX, jsonObj.endY, jsonObj.photoId, jsonObj.action, jsonObj.labelId);
+
+                    tempPolygon.labelId = parseInt(selectedValue);
+
+                    if (tempPolygon.id == null) {
+                        tempPolygon.action = AddAct;
+                    }
+                    else {
+                        tempPolygon.action = EditAct;
+                    }
+
+                    let filteredPolygons = polygons.filter((value) => {
+                        return value.id != tempPolygon.id;
+                    });
+                    polygons = filteredPolygons;
+
+                    polygons.push(tempPolygon);
+
+                    updateHiddenFieldPolygon();
+                    drawPolygon();
+                }
+                else {
+                    const jsonObj = JSON.parse($("#hdnTempBox").val());
+
+                    let tempBox = new Box(jsonObj.id, jsonObj.x1, jsonObj.x2, jsonObj.y1, jsonObj.y2, jsonObj.angle,
+                        jsonObj.boundingBoxNumber, jsonObj.photoId, jsonObj.action, jsonObj.labelId);
+
+                    tempBox.labelId = parseInt(selectedValue);
+
+                    if (tempBox.id == null) {
+                        tempBox.action = AddAct; //Action = add box
+                    }
+                    else {
+                        tempBox.action = EditAct; //Action = edit box
+                    }
+
+                    let filteredBoxes = boxes.filter((value) => {
+                        return value.id != tempBox.id;
+                    });
+                    boxes = filteredBoxes;
+
+                    boxes.push(tempBox);
+                    updateHiddenFieldFromBoxes();
+                    iCanvas.redraw();
+                }
+                
+                $('#labelModalWindow').modal('hide');
+                //$("#selectedLabelId").val("");
+                //$("#hdnTempBox").val("");
+                $('#idlabelSelect').val(-1);
+            }
+            else {
+                showToastrJs(error, "Please select a label before saving.");
+            }
+            
+        });
+
+        $('#labelModalWindow').on('shown.bs.modal', function () {
+            debugger;
+            const labelId = $("#selectedLabelId").val();
+            if (labelId != "-1") {
+                $('#idlabelSelect').val(labelId);
+            }
+            else {
+                $('#idlabelSelect').val("-1");
+            }
+        })
+
+        $("#btnCancelModal").click(function () {
+            debugger;
+            if (polygonFlag) {
+                let filteredLineSegments = lineSegments.filter((lineSegment) => {
+                    //check if this linesegment is associated with polygon or not
+                    //if not then remove it from array lineSegments
+                    let polygonExists = polygons.filter((polygon) => {
+                        return polygon.polygonNo == lineSegment.polygonNo;
+                    });
+
+                    return polygonExists.length != 0;
+                });
+
+                lineSegments = filteredLineSegments;
+                drawPolygon();
+            }
+            else {
+                iCanvas.redraw();
+            }
+           
+        });
     });
 
     function openFolder() {
         debugger;
         $("#formFile").click();
     }
+
+    function SelectedValue(ddlObject) {
+        //Selected value of dropdownlist  
+        var selectedValue = ddlObject.value;
+        //Selected text of dropdownlist  
+        var selectedText = ddlObject.options[ddlObject.selectedIndex].innerHTML;
+
+        //alert popup with detail of seleceted value and text  
+        alert(" Selected Value: " + selectedValue + " -- " + "Selected Text: " + selectedText);
+    }
+
+    function onChangeSelectLabel(selectedValue) {
+        $("#selectedLabelId").val(selectedValue);
+        enableModalSaveButton();
+    }
+    
+    function enableModalSaveButton() {
+        //enable save button 
+        $("#btnSaveModal").removeClass("disabled");
+        document.getElementById("btnSaveModal").disabled = false;
+    }
+
+    function disableModalSaveButton() {
+        //disable save button 
+        $("#btnSaveModal").addClass("disabled");
+        document.getElementById("btnSaveModal").disabled = true;
+    }
+
+    function openModal(operation) {
+        var ele = document.getElementById("hdnBtnModal");
+        ele.click();
+
+        switch (operation) {
+            case 'A': document.getElementById("titleModal").innerText = "Add Annotation Label:";
+                break;
+            case 'E': document.getElementById("titleModal").innerText = "Edit Annotation Label:";
+                break;
+            default:
+                document.getElementById("titleModal").innerText = "Edit Annotation Label:";
+                break;
+        }
+        disableModalSaveButton();
+    }
+
 </script>
 <div class="mainContainer">
     @Html.Hidden("hdnPhotoId", Model.Photos?.FirstOrDefault()?.Id)
     @Html.Hidden("hdnPhotoCount", Model.Photos?.Count())
-    @Html.Hidden("hdnPreviousPhotoId", 0)  
+    @Html.Hidden("hdnPreviousPhotoId", 0)
     @Html.Hidden("hdnNextPhotoId", noOfImages > 1 ? 2 : 0) @*//If there are more than 1 photos then set next elementId equal to 2*@
 
     <div class="leftDiv">
@@ -90,14 +252,14 @@
             <h5 style="margin-left:5px;color:white;">Upload Files</h5>
         </div>
 
-        <img id="btnRect" src="~/UploadedFiles/VioRect.png" class="btn" data-placement="right" title="Draw Bounding box on image"
+        <img id="btnRect" src="~/UploadedFiles/VioRect.png" class="btn" data-toggle="tooltip" data-placement="right" title="Draw Bounding box on image"
              style="margin-left:10px;margin-top:20px;cursor:pointer;" width="70" height="70" onclick="InitializeRectangleAnnotation(); return false;" />
         <hr />
-        <img id="btnCircle" src="~/UploadedFiles/VioCircle.png" class="btn" data-placement="right" title="Draw Circle on image"
+        <img id="btnCircle" src="~/UploadedFiles/VioCircle.png" class="btn" data-toggle="tooltip" data-placement="right" title="Draw Circle on image"
              style="margin-left:10px;cursor:pointer;display:none;" width="70" height="70" />
 
         @*<hr />*@
-        <img id="btnPolygon" src="~/UploadedFiles/VioPolygon.png" class="btn" data-placement="right" title="Draw Polygon on image"
+        <img id="btnPolygon" src="~/UploadedFiles/VioPolygon.png" class="btn" data-toggle="tooltip" data-placement="right" title="Draw Polygon on image"
              style="margin-left:10px;cursor:pointer;" width="70" height="70" onclick="InitializePolygonAnnotation(); return false;" />
         <hr />
         @*}*@
@@ -108,19 +270,20 @@
                 {*@
             <div style="margin-top: 5px; float: left; border: 2px solid darkorchid;">
                 @*<input id="btnSave" class="btn btn-success disabled" style="cursor: pointer;" onclick="saveBoundingBox(); return false;" type="button" value="Save" />
-                    <input id="btnDelete" class="btn btn-danger disabled" style="cursor: pointer;" onclick="removeBoundingBox(); return false;" type="button" value="Delete" />*@
-                <button id="btnSave" class="btni btn-success disabled" disabled onclick="saveAnnotations(); return false;"><i class="fa fa-save"></i></button>
-                <button id="btnDelete" class="btni btn-danger disabled" disabled onclick="removeAnnotations(); return false;"><i class="fa fa-trash"></i></button>
-                <button id="btnRefresh" class="btni btn-info disabled" disabled onclick="refreshAnnotations(); return false;"><i class="fa fa-refresh"></i></button>
-                <button id="btnDownload" class="btni btn-info disabled" disabled onclick="download(); return false;"><i class="fas fa-download"></i></button>
+        <input id="btnDelete" class="btn btn-danger disabled" style="cursor: pointer;" onclick="removeBoundingBox(); return false;" type="button" value="Delete" />*@
+                <button id="btnSave" data-toggle="tooltip" data-placement="bottom" title="Save" class="btni btn-success disabled" disabled onclick="saveAnnotations(); return false;"><i class="fa fa-save"></i></button>
+                <button id="btnDelete" data-toggle="tooltip" data-placement="bottom" title="Delete" class="btni btn-danger disabled" disabled onclick="removeAnnotations(); return false;"><i class="fa fa-trash"></i></button>
+                <button id="btnRefresh" data-toggle="tooltip" data-placement="bottom" title="Refresh" class="btni btn-info disabled" disabled onclick="refreshAnnotations(); return false;"><i class="fa fa-refresh"></i></button>
+                <button id="btnDownload" data-toggle="tooltip" data-placement="bottom" title="Download" class="btni btn-info disabled" disabled onclick="download(); return false;"><i class="fas fa-download"></i></button>
                 <a id="lnkDownloadImage" hidden class="btni btn-info" download="myImage.jpg" href="" onclick="download_img(this);"><i class='fas fa-download'></i></a>
-
+                <button id="btnOpenModal" data-toggle="tooltip" data-placement="bottom" title="Edit Label" class="btni btn-info disabled" disabled onclick="openModal('E'); return false;" ><i class='fas fa-edit'></i></button>
+                <button hidden id="hdnBtnModal" data-placement="bottom" class="btni btn-info" data-toggle="modal" data-target="#labelModalWindow"></button>
                 @*<i title="Save" class="fa fa-save" onclick="saveBoundingBox(); return false;" style="font-size:36px;color:cornflowerblue;cursor:pointer;"></i>
-                    <i title="Remove" class="fa fa-remove" onclick="removeBoundingBox(); return false;" style="font-size:36px;color:red;cursor:pointer;"></i>*@
+        <i title="Remove" class="fa fa-remove" onclick="removeBoundingBox(); return false;" style="font-size:36px;color:red;cursor:pointer;"></i>*@
             </div>
             <div id="divBtn" class="nextprev">
-                <button id="btnPrevious" class="btn w3-left" onclick="movePrevious(); return false;">❮ Previous</button>
-                <button id="btnNext" class="btn w3-left" onclick="moveNext(); return false;">Next ❯</button>
+                <button id="btnPrevious" class="btn w3-left" onclick="saveChngBeforeToggleImage('P'); return false;">❮ Previous</button>
+                <button id="btnNext" class="btn w3-left" onclick="saveChngBeforeToggleImage('N'); return false;">Next ❯</button>
             </div>
 
         </div>
@@ -142,15 +305,61 @@
                 @Html.Partial("GridViewPartial", Model.Photos)
             </div>*@
 
-        <div class="divLables">
+        <div class="divLabels">
+            <div class="labelsHeader">
+                <button class="btn btn-success" style="height:30px;width:auto;padding:2px" onclick="createLabel(); return false;">
+                    Create Lable <i class='fas fa-plus' style='font-size:13px'></i>
+                </button>
+            </div>
+            <div class="labelsBody">
+                <ul id="listLabels" style="list-style-type: none;padding:0;margin:0;">
+                    @if (Model.Labels != null)
+                    {
+                        for (int i = 0; i < Model.Labels.Count(); i++)
+                        {
+                            string uid = Convert.ToString(Model.Labels[i].Id);
+                            string linkUid = "li_" + uid;
+                            string divId = "div_" + uid;
+                            string idBtnSave = "btnSave_" + uid;
+                            string idBtnCancel = "btnCancel_" + uid;
+                            string idBtnEdit = "btnEdit_" + uid;
+                            string idBtnDelete = "btnDelete_" + uid;
+                            string wrapperDivId = "wrapperDiv_" + uid;
+                            string iconCircle = "iconCircle_" + uid;
+                            string hdnLabelText = "hdnLabelText_" + uid;
+                            string color = Model.Labels[i].Color == null ? "red" : Model.Labels[i].Color;
 
+                            <li id=@linkUid>
+                                <div id=@wrapperDivId style="border: 1px solid lightseagreen; float: left;">
+                                    <i id=@iconCircle class="fa fa-circle" style="font-size: 15px; color:@color"></i>
+                                    <input id=@uid style="margin-left:15px;" readonly type="text" value="@Model.Labels[i].LabelName" onkeyup="onKeyUp(this.value, '@uid')" placeholder="Enter Lable name" labelId="@uid" />
+                                    <input type="hidden" id="@hdnLabelText" value="" />
+
+                                    <button data-toggle="tooltip" data-placement="right" title="Save" id=@idBtnSave class="btn hideBtn" style="margin-left:40px;" disabled onclick="saveLabel('@uid');"><span class="glyphicon">&#xe013;</span></button>
+                                    <button data-toggle="tooltip" data-placement="right" title="Cancel" id=@idBtnCancel class="btn hideBtn" onclick="cancelLabel('@uid'); return false;"><span class="glyphicon">&#xe014;</span></button>
+
+                                    <button data-toggle="tooltip" data-placement="right" title="Edit" id=@idBtnEdit class="btn" style="margin-left:40px;" onclick="editLabel('@uid'); return false;"><i class='fas fa-edit' style='font-size:15px'></i></button>
+                                    <button data-toggle="tooltip" data-placement="right" title="Delete" id=@idBtnDelete class="btn" onclick="deleteLabel('@uid');"><i class='fa fa-trash' style='font-size:14px'></i></button>
+
+                                </div>
+                            </li>
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="lblSpinner" style="display:none">
+                <div class="center-div">
+                    <div class="inner-div">
+                        <div class="loader"></div>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="divFiles">
             <div style="height:10%">
                 <label style="color: cadetblue;float:left;margin-left:5px;">Photo List</label>
                 <label id="headerPhotoCount" style="color: black; margin-left: 5px;margin-right:5px; float: right;">@noOfImages</label>
                 <label style="color: cadetblue;float: right;margin-left:0px">Total Photos:</label>
-
             </div>
             <div class="divFilesViewPartial">
                 <ul id="listFiles" style="list-style-type: none;padding:0;margin:0;">
@@ -162,11 +371,11 @@
                                 var id = i + 1;
                                 string elementId = Convert.ToString(id);
 
-                            <li>
-                                <a id=@elementId href="" class="list-group-item" onclick='openImageInCanvas("@Model.Photos[i].Id",@elementId); return false;'>
-                                    @Model.Photos[i].FileName
-                                </a>
-                            </li>
+                                <li>
+                                    <a id=@elementId href="" class="list-group-item" onclick='openImageInCanvas("@Model.Photos[i].Id",@elementId); return false;'>
+                                        @Model.Photos[i].FileName
+                                    </a>
+                                </li>
                             }
                         }
                     }
@@ -174,5 +383,42 @@
             </div>
         </div>
 
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="labelModalWindow" role="dialog">
+        <div class="modal-dialog modal-sm">
+
+            <!-- Modal content-->
+            <div class="modal-content" style="width:350px;">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 id="titleModal" class="modal-title" style="color:blueviolet">Edit Annotation Label:</h4>
+                </div>
+                <div class="modal-body form-group" style="height: 150px;">
+                    <label style="margin-left:15px;" for="sel1">Label:</label>
+                  
+                        <select style="margin-inline:auto;" onchange="onChangeSelectLabel(this.value); this.size = 1; this.blur();"
+                                onblur="this.size = 1;" onfocus="this.size = 5;"
+                                class="form-control" name="idlabelSelect" id="idlabelSelect">
+                            <option value="-1" selected disabled>Select Label</option>
+                            @if (Model.Labels != null)
+                            {
+                                foreach (var label in Model.Labels)
+                                {
+                                    <option value="@label.Id">@label.LabelName</option>
+                                }
+                            }
+                        </select>
+                
+                   
+                </div>
+                <div class="modal-footer">
+                    <button id="btnSaveModal" type="button" class="btn btn-success disabled" disabled>Save</button>
+                    <button id="btnCancelModal" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+
+        </div>
     </div>
 </div>

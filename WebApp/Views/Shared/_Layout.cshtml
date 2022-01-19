@@ -42,42 +42,47 @@
     <script src="~/Scripts/Dashboard/RectangleAnnotation.js"></script>
     <script src="~/Scripts/Dashboard/Polygon.js"></script>
     <script src="~/Scripts/fontawesome.js"></script>
+
     <script type="text/javascript">
+        $(document).ready(function () {
+            $('[data-toggle="tooltip"]').tooltip();
 
-        function showToastr() {
-            if ($("#ErrorMessage").val() != null && $("#ErrorMessage").val() != "") {
+            function showToastr() {
+                if ($("#ErrorMessage").val() != null && $("#ErrorMessage").val() != "") {
 
-                toastr.options =
-                {
-                    "debug": false,
-                    "positionClass": "toast-bottom-right",
-                    "onclick": null,
-                    "fadeIn": 300,
-                    "fadeOut": 200,
-                    "timeOut": 3000,
-                    "extendedTimeOut": 1000
+                    toastr.options =
+                    {
+                        "debug": false,
+                        "positionClass": "toast-bottom-right",
+                        "onclick": null,
+                        "fadeIn": 300,
+                        "fadeOut": 200,
+                        "timeOut": 3000,
+                        "extendedTimeOut": 1000
+                    }
+
+                    toastr["error"]($("#ErrorMessage").val());
                 }
 
-                toastr["error"]($("#ErrorMessage").val());
-            }
+                if ($("#SuccessMessage").val() != null && $("#SuccessMessage").val() != "") {
 
-            if ($("#SuccessMessage").val() != null && $("#SuccessMessage").val() != "") {
+                    toastr.options =
+                    {
+                        "debug": false,
+                        "positionClass": "toast-bottom-right",
+                        "onclick": null,
+                        "fadeIn": 300,
+                        "fadeOut": 200,
+                        "timeOut": 3000,
+                        "extendedTimeOut": 1000
+                    }
 
-                toastr.options =
-                {
-                    "debug": false,
-                    "positionClass": "toast-bottom-right",
-                    "onclick": null,
-                    "fadeIn": 300,
-                    "fadeOut": 200,
-                    "timeOut": 3000,
-                    "extendedTimeOut": 1000
+                    toastr["success"]($("#SuccessMessage").val());
                 }
-
-                toastr["success"]($("#SuccessMessage").val());
             }
-        }
-        showToastr();
+            showToastr();
+        });
+      
     </script>
 
 </head>

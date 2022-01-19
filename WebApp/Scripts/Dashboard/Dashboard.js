@@ -29,6 +29,10 @@ function download() {
 
 const error = "error";
 const success = "success";
+const movePrevious = "P";
+const moveNext = "N";
+
+let polygonFlag = false;
 
 function showToastrJs(type,msg) {
     toastr.options =
@@ -86,7 +90,13 @@ function openImageInCanvas(id,elementId) {
           //  $('.spinner').css('display', 'none');
 
             $("#divCanvasViewPartial").html(data);
-            InitializeRectangleAnnotation();
+            if (polygonFlag) {
+                InitializePolygonAnnotation();
+            }
+            else {
+                InitializeRectangleAnnotation();
+            }
+            
             handleMouseEvents();
 
             if (elementId != undefined) {
@@ -125,9 +135,6 @@ function uploadFile() {
     $('.spinner').css('display', 'block');
 
     var countOfPhotosSaved = $("#hdnPhotoCount").val() == "" ? 0 : parseInt($("#hdnPhotoCount").val());
-
-    var form = $("DashboardForm");
-    var uploadFileNameUrl = $("#UploadFileNameUrl").val();
 
     var $file = document.getElementById('formFile');
     var val = $("#formFile").val();
@@ -177,27 +184,12 @@ function uploadFile() {
 
         document.getElementById("headerPhotoCount").innerText = totalCount;
 
-        $("#hdnPreviousPhotoId").val(0);
-        $("#hdnNextPhotoId").val(countImageFiles > 1 ? 2 : 0);
-
-        //$.ajax({
-        //    url: uploadFileNameUrl,
-        //    type: 'POST',
-        //    data: '{filesViewModels:' + JSON.stringify(arrFileNames) + '}',
-        //    contentType: 'application/json; charset=utf-8',
-        //    success: function (data) {
-
-        //        $("#divFilesViewPartial").html(data);
-        //        //var message = "Photo uploaded successfully";
-        //        //showToastrJs(success, message);
-
-        //        //$("#divGridViewPartial").html(data);
-        //        $('.spinner').css('display', 'none');
-        //    },
-        //    error: function (callResult) {
-        //        ShowAjaxFailMessage(callResult, 'An error occurred : ');
-        //    }
-        //});
+        //If user dont have saved photos in database then set next and previous values to default 
+        if (countOfPhotosSaved == 0) {
+            $("#hdnPreviousPhotoId").val(0);
+            $("#hdnNextPhotoId").val(countImageFiles > 1 ? 2 : 0);
+        }
+     
     }
     return false;
 }
@@ -219,14 +211,14 @@ function insertFile(fileKey,elementId) {
         processData: false,
         success: function (data) {
             $('.spinner').css('display', 'none');
-            if (data.fileId > -1) {
+            if (data.Id > -1) {
                 var message = "Photo uploaded successfully.";
 
-                if (data.IsFileUploaded) {
+                if (data.IsSaved) {
                     showToastrJs(success, message);
                 }
 
-                openImageInCanvas(data.fileId, elementId);
+                openImageInCanvas(data.Id, elementId);
             }
             else {
                 var message = "Please upload image file.";
@@ -312,7 +304,9 @@ function initializeCanvasButtons() {
     $("#btnSave").addClass("disabled");
     $("#btnRefresh").addClass("disabled");
     $("#btnDownload").removeClass("disabled");
-
+    $("#btnOpenModal").addClass("disabled");
+   
+    document.getElementById("btnOpenModal").disabled = true;
     document.getElementById("btnSave").disabled = true;
     document.getElementById("btnRefresh").disabled = true;
     document.getElementById("btnDelete").disabled = true;
@@ -340,7 +334,7 @@ function loadPolygons() {
 
         //Continue.......
         polygons = sPolygonsData.map(function (item) {
-            var objPolygon = new Polygon(item.id, item.polygonNo, item.startX, item.startY, item.endX, item.endY, item.photoId, null);
+            var objPolygon = new Polygon(item.id, item.polygonNo, item.startX, item.startY, item.endX, item.endY, item.photoId, null, item.labelId);
 
             return objPolygon;
         });
@@ -372,7 +366,7 @@ function loadBoundingBoxes() {
         var sBoxes = JSON.parse(boxData);
 
         boxes = sBoxes.map(function (item) {
-            var objBox = new Box(item.id, item.x1, item.x2, item.y1, item.y2, item.angle, item.boundingBoxNumber, item.photoId, null);
+            var objBox = new Box(item.id, item.x1, item.x2, item.y1, item.y2, item.angle, item.boundingBoxNumber, item.photoId, null, item.labelId);
             return objBox;
         });
     }
@@ -381,20 +375,20 @@ function loadBoundingBoxes() {
 }
 
 function addAction(item) {
-    var objBox = new Box(item.id, item.x1, item.x2, item.y1, item.y2, item.angle, item.boundingBoxNumber, item.photoId, null);
+    var objBox = new Box(item.id, item.x1, item.x2, item.y1, item.y2, item.angle, item.boundingBoxNumber, item.photoId, null, item.labelId);
     return objBox;
 }
 
-function saveAnnotations() {
+function saveAnnotations(moveTo="") {
     if (polygonFlag) {
-        savePolygons();
+        savePolygons(moveTo);
     }
     else {
-        saveBoundingBox();
+        saveBoundingBox(moveTo);
     }
 }
 
-function savePolygons() {
+function savePolygons(moveTo = "") {
     if (!isServerAndClientSideChangesEqual()) {
         var photoId = $("#PhotoId").val();
         var contentUrl = $('#SavePolygonUrl').val();
@@ -407,7 +401,7 @@ function savePolygons() {
             }
         }
 
-        const arrPolygonData = allPolygons.map(function (value, index) {
+        const arrPolygonData = allPolygons.map((value) => {
             var lineSeg = lineSegments.filter((lineSegment) => {
                 return lineSegment.polygonNo == value.polygonNo;
             });
@@ -421,6 +415,7 @@ function savePolygons() {
                 endY: value.endY,
                 photoId: value.photoId,
                 action: value.action,
+                labelId: value.labelId,
                 lineSegments: lineSeg
             }
 
@@ -435,19 +430,27 @@ function savePolygons() {
             contentType: 'application/json;charset=utf-8',
             type: 'POST',
             success: function (data) {
-                $("#divCanvasViewPartial").html(data);
-                var element = document.getElementById("btnSave");
                 showToastrJs(success, "Changes saved successfully.");
 
-                $("#btnSave").addClass("disabled");
-                $("#btnRefresh").addClass("disabled");
+                if (moveTo == moveNext) {
+                    funcMoveNext();
+                }
+                else if (moveTo == movePrevious) {
+                    funcMovePrevious();
+                }
+                else {
+                    $("#divCanvasViewPartial").html(data);
 
-                document.getElementById("btnSave").disabled = true;
-                document.getElementById("btnRefresh").disabled = true;
+                    $("#btnSave").addClass("disabled");
+                    $("#btnRefresh").addClass("disabled");
 
-                InitializePolygonAnnotation();
+                    document.getElementById("btnSave").disabled = true;
+                    document.getElementById("btnRefresh").disabled = true;
 
-                handleMouseEvents();
+                    InitializePolygonAnnotation();
+
+                    handleMouseEvents();
+                }
             }
         }).fail(function (callResult) {
             ShowAjaxFailMessage(callResult, 'An error occurred : ');
@@ -455,7 +458,7 @@ function savePolygons() {
     }
 }
 
-function saveBoundingBox() {
+function saveBoundingBox(moveTo = "") {
 
     if (!isServerAndClientSideChangesEqual()) {
 
@@ -464,9 +467,9 @@ function saveBoundingBox() {
 
         let arrBoxesData = boxes;
 
-       // var boxesData = ; //$("#ClientSideBoundingBoxData").val();
-       
-       // arrBoxesData.push(boxes);
+        // var boxesData = ; //$("#ClientSideBoundingBoxData").val();
+
+        // arrBoxesData.push(boxes);
 
         if (removedBoxes.length != 0) {
             for (var i = 0; i < removedBoxes.length; i++) {
@@ -482,23 +485,32 @@ function saveBoundingBox() {
             contentType: 'application/json; charset=utf-8',
             type: 'POST',
             success: function (data) {
-                $("#divCanvasViewPartial").html(data);
-                var element = document.getElementById("btnSave");
                 showToastrJs(success, "Changes saved successfully.");
 
-                $("#btnSave").addClass("disabled");
-                $("#btnRefresh").addClass("disabled");
+                if (moveTo == moveNext) {
+                    funcMoveNext();
+                }
+                else if (moveTo == movePrevious) {
+                    funcMovePrevious();
+                }
+                else {
+                    $("#divCanvasViewPartial").html(data);
 
-                document.getElementById("btnSave").disabled = true;
-                document.getElementById("btnRefresh").disabled = true;
+                    $("#btnSave").addClass("disabled");
+                    $("#btnRefresh").addClass("disabled");
+                    $("#btnOpenModal").addClass("disabled");
+                    document.getElementById("btnOpenModal").disabled = true;
+                    document.getElementById("btnSave").disabled = true;
+                    document.getElementById("btnRefresh").disabled = true;
 
-                InitializeRectangleAnnotation();
-                handleMouseEvents();
+                    InitializeRectangleAnnotation();
+                    handleMouseEvents();
+                }
+
             }
         }).fail(function (callResult) {
             ShowAjaxFailMessage(callResult, 'An error occurred : ');
         });
-
     }
 }
 
@@ -608,7 +620,7 @@ function isBoxesEqual(a, b) {
     if (a.length != b.length) return false;
 
     for (var i = 0; i < a.length; i++) {
-        if (a[i].angle != b[i].angle || a[i].x1 != b[i].x1 || a[i].y1 != b[i].y1 || a[i].x2 != b[i].x2 || a[i].y2 != b[i].y2) {
+        if (a[i].labelId != b[i].labelId || a[i].angle != b[i].angle || a[i].x1 != b[i].x1 || a[i].y1 != b[i].y1 || a[i].x2 != b[i].x2 || a[i].y2 != b[i].y2) {
             return false;
         }
     }
@@ -622,7 +634,7 @@ function isPolygonsEqual(a, b) {
     if (a.length != b.length) return false;
 
     for (var i = 0; i < a.length; i++) {
-        if (a[i].startX != b[i].startX || a[i].startY != b[i].startY || a[i].endX != b[i].endX || a[i].endY != b[i].endY) {
+        if (a[i].labelId != b[i].labelId || a[i].startX != b[i].startX || a[i].startY != b[i].startY || a[i].endX != b[i].endX || a[i].endY != b[i].endY) {
             return false;
         }
     }
@@ -649,34 +661,286 @@ function toggleSaveButton() {
     }
 }
 
-function movePrevious() {
+function saveChngBeforeToggleImage(moveTo) {
+    //Check if there are unsaved changes on canvas image
+    //Save those first then move to next or previous image 
+    if ($("#btnSave").hasClass("disabled")) {
+        switch (moveTo) {
+            case movePrevious: funcMovePrevious();
+                break;
+            case moveNext: funcMoveNext();
+                break;
+        }
+    }
+    else {
+        saveAnnotations(moveTo);
+    }
+}
+
+function funcMovePrevious() {
+
     var prevValue = $("#hdnPreviousPhotoId").val();
 
     if (prevValue > 0) {
 
         var link = document.getElementById(prevValue);
+
         if (link != null) {
+
             $("#hdnPreviousPhotoId").val(parseInt(prevValue) - 1);
             $("#hdnNextPhotoId").val(parseInt(prevValue) + 1);
 
             link.click();
         }
-    }
-    return false;
+        return false;
+    }  
 }
 
-function moveNext() {
+function funcMoveNext() {
+
     var nextValue = $("#hdnNextPhotoId").val();
 
     if (nextValue > 1) {
         var link = document.getElementById(nextValue);
 
         if (link != null) {
+      
             $("#hdnPreviousPhotoId").val(parseInt(nextValue) - 1);
             $("#hdnNextPhotoId").val(parseInt(nextValue) + 1);
 
             link.click();
         }
-    }
+        return false;
+    } 
+}
+
+function createLabel() {
+    $('.lblSpinner').css('display', 'block');
+
+    var id = "id" + Math.random().toString(16).slice(2)
+    var addLabelViewUrl = $("#AddLabelViewUrl").val();
+
+    $.ajax({
+        url: addLabelViewUrl,
+        data: '{labelId:' + JSON.stringify(id) + '}',
+        contentType: 'application/json; charset=utf-8',
+        type: 'POST',
+        success: function (data) {
+            $('.lblSpinner').css('display', 'none');
+
+            var node = document.createElement("LI");
+            node.setAttribute("id", "li_" + id);
+
+            var divTag = document.createElement("div");
+            divTag.setAttribute("id", "div_" + id);
+
+            node.appendChild(divTag);
+            document.getElementById("listLabels").prepend(node);
+
+            $("#div_" + id).html(data);
+
+            $("#iconCircle_" + id).css("color", getRandomColor());
+
+            //var uid = $("#uid").val();
+            //$("#btnGrpEdit_" + uid).addClass("hideBtnGroup");
+        }
+    }).fail(function (callResult) {
+        ShowAjaxFailMessage(callResult, 'An error occurred : ');
+    });
+
     return false;
+}
+
+function cancelLabel(uid) {
+
+    var labelId = document.getElementById(uid).getAttribute("labelId");
+
+    if (labelId == null || labelId == "") {
+        //If text field does not contain labelId attribute that means it is newly created input tag 
+        //so it can be removed
+        let linkUid = "li_" + uid;
+        let ulNode = document.getElementById("listLabels");
+        let ulNode_nested = document.getElementById(linkUid);
+
+        let throwawayNode = ulNode.removeChild(ulNode_nested);
+    }
+    else {
+        //It means it is already been saved in DB, so only close the edit field
+        var hdnLabelText = "hdnLabelText_" + uid;
+        var idBtnSave = "btnSave_" + uid;
+        var idBtnCancel = "btnCancel_" + uid;
+        var idBtnEdit = "btnEdit_" + uid;
+        var idBtnDelete = "btnDelete_" + uid;
+        var inputEle = document.getElementById(uid);
+
+        inputEle.value = $("#" + hdnLabelText).val();
+        inputEle.readOnly = true;
+
+        $("#" + hdnLabelText).val(""); //set it empty string;
+
+        //hide Save and cancel button
+        $("#" + idBtnSave).addClass("hideBtn");
+        $("#" + idBtnCancel).addClass("hideBtn");
+
+        //show Edit and delete button
+        $("#" + idBtnEdit).removeClass("hideBtn");
+        $("#" + idBtnDelete).removeClass("hideBtn");
+
+        $("#wrapperDiv_" + uid).css("border", "1px solid lightseagreen");
+
+        return false;
+    }
+}
+
+function saveLabel(uid) {
+   
+    var labelValue = $("#" + uid).val();
+
+    var saveLabelUrl = $("#SaveLabelUrl").val();
+    var idBtnSave = "btnSave_" + uid;
+    var idBtnCancel = "btnCancel_" + uid;
+    var idBtnEdit = "btnEdit_" + uid;
+    var idBtnDelete = "btnDelete_" + uid;
+
+    if (labelValue == "") {
+        showToastrJs(error, "Please enter label name");
+    }
+    else {
+        const inputEle = document.getElementById(uid);
+        var labelId = inputEle.getAttribute("labelId");
+        const color = document.getElementById("iconCircle_" + uid).style.color;
+        const userProjectId = $("#UserProjectId").val();
+
+        var jsonLabel = {
+            Id: labelId == null || labelId == "" ? 0 : labelId,
+            LabelName: labelValue,
+            Color: color,
+            UserProjectId: userProjectId
+        };
+
+        $('.spinner').css('display', 'block');
+
+        $.ajax({
+            url: saveLabelUrl,
+            data: '{labelDataModel:' + JSON.stringify(jsonLabel) + '}',
+            contentType: 'application/json; charset=utf-8',
+            type: 'POST',
+            success: function (data) {
+               // $('.spinner').css('display', 'none');
+
+                if (data.Id > -1) {
+                   // var inputEle = document.getElementById(uid);
+                    inputEle.setAttribute("labelId", data.Id);
+                    inputEle.readOnly = true;
+
+                    //hide Save and cancel button
+                    $("#" + idBtnSave).addClass("hideBtn");
+                    $("#" + idBtnCancel).addClass("hideBtn");
+
+                    //show Edit and delete button
+                    $("#" + idBtnEdit).removeClass("hideBtn");
+                    $("#" + idBtnDelete).removeClass("hideBtn");
+
+                    $("#wrapperDiv_" + uid).css("border", "1px solid lightseagreen");
+                }
+                else {
+                    var message = "Duplicate label name found.";
+                    showToastrJs(error, message);
+                }
+            }
+        }).fail(function (callResult) {
+            ShowAjaxFailMessage(callResult, 'An error occurred : ');
+        });
+
+    }
+  //  return false;
+}
+
+function editLabel(uid) {
+    var hdnLabelText = "hdnLabelText_" + uid;
+    var idBtnSave = "btnSave_" + uid;
+    var idBtnCancel = "btnCancel_" + uid;
+    var idBtnEdit = "btnEdit_" + uid;
+    var idBtnDelete = "btnDelete_" + uid;
+    var inputEle = document.getElementById(uid);
+
+    inputEle.readOnly = false;
+
+    var currentLabelValue = inputEle.value;
+    $("#" + hdnLabelText).val(currentLabelValue);
+
+    //show Save and cancel button
+    $("#" + idBtnSave).removeClass("hideBtn");
+    document.getElementById(idBtnSave).disabled = true;
+
+    $("#" + idBtnCancel).removeClass("hideBtn");
+
+    //hide Edit and delete button
+    $("#" + idBtnEdit).addClass("hideBtn");
+    $("#" + idBtnDelete).addClass("hideBtn");
+
+    $("#wrapperDiv_" + uid).css("border", "2px solid red");
+  
+    return false;
+}
+
+function getRandomColor() {
+    var letters = '0123456789ABCDEF';
+    var color = '#';
+    for (var i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+}
+
+function onChangeLabelText(uid) {
+    var idBtnSave = "btnSave_" + uid;
+    document.getElementById(idBtnSave).disabled = false;
+}
+
+function onKeyUp(val, uid) {
+    var hdnLabelText = "hdnLabelText_" + uid;
+    var idBtnSave = "btnSave_" + uid;
+
+    if (val !== "") {
+        if ($("#" + hdnLabelText).val() != val) {          
+            document.getElementById(idBtnSave).disabled = false;
+
+            return false;
+        }
+    }
+
+    document.getElementById(idBtnSave).disabled = true;
+    return false;
+}
+
+function deleteLabel(uid) {
+    var deleteLabelDataUrl = $("#DeleteLabelDataUrl").val();
+    $('.spinner').css('display', 'block');
+
+    var labelId = document.getElementById(uid).getAttribute("labelId");
+
+    $.ajax({
+        url: deleteLabelDataUrl,
+        data: '{labelId:' + JSON.stringify(labelId) + '}',
+        contentType: 'application/json; charset=utf-8',
+        type: 'POST',
+        success: function (data) {
+           // $('.spinner').css('display', 'none');
+            if (data.IsSaved) {
+                document.getElementById(uid).removeAttribute("labelId");
+                cancelLabel(uid);
+            }
+        }
+    }).fail(function (callResult) {
+        ShowAjaxFailMessage(callResult, 'An error occurred : ');
+    });
+}
+
+function getStrokeColor(labelId) {
+    if (labelId == null) {
+        return null;
+    }
+    const color = document.getElementById("iconCircle_" + labelId).style.color;
+    return color;
 }

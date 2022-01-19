@@ -156,5 +156,77 @@ namespace WebApp.Services
             }
             return photoData;
         }
+
+        public async Task<bool> AddLabelsData(LabelsDataModel labelsDataModel)
+        {
+            try
+            {
+                HttpResponseMessage resp = await client.PostAsJsonAsync("api/Labels/add-label", labelsDataModel);
+                resp.EnsureSuccessStatusCode();
+                if (!resp.IsSuccessStatusCode)
+                {
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+            return true;
+        }
+
+        public async Task<bool> UpdateLabelsData(LabelsDataModel labelsDataModel)
+        {
+            try
+            {
+                HttpResponseMessage resp = await client.PostAsJsonAsync("api/Labels/update-label", labelsDataModel);
+                resp.EnsureSuccessStatusCode();
+                if (!resp.IsSuccessStatusCode)
+                {
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+            return true;
+        }
+
+        public async Task<bool> DeleteLabelsData(LabelsDataModel labelsDataModel)
+        {
+            try
+            {
+                HttpResponseMessage resp = await client.PostAsJsonAsync("api/Labels/delete-label", labelsDataModel);
+                resp.EnsureSuccessStatusCode();
+                if (!resp.IsSuccessStatusCode)
+                {
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+            return true;
+        }
+        public async Task<List<LabelsDataModel>> GetLabelsByUserProjectId(int userProjectId)
+        {
+            List<LabelsDataModel> labelsDataModels = null; 
+            try
+            {
+                HttpResponseMessage resp = await client.GetAsync($"api/Labels/{userProjectId}");
+                resp.EnsureSuccessStatusCode();
+                if (resp.IsSuccessStatusCode)
+                {
+                    labelsDataModels = await resp.Content.ReadAsAsync<List<LabelsDataModel>>();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+            return labelsDataModels;
+        }
     }
 }

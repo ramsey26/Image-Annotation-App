@@ -16,8 +16,6 @@ let offsetY;
 var $canvas = "";
 var removedBoxes = [];
 
-var polygonFlag = false;
-
 const AddAct = "A";
 const EditAct = "E";
 const DeleteAct = "D";
@@ -25,7 +23,7 @@ const DeleteAct = "D";
 var selectedBoxIndex = -1;
 
 class Box {
-    constructor(id, x1, x2, y1, y2, angle, boundingBoxNumber, photoId, action) {
+    constructor(id, x1, x2, y1, y2, angle, boundingBoxNumber, photoId, action,labelId) {
         this.id = id;
         this.x1 = x1;
         this.x2 = x2;
@@ -39,6 +37,7 @@ class Box {
         this.yCenter = this.y1 + (this.height) / 2;
         this.photoId = photoId;
         this.action = action;
+        this.labelId = labelId;
     }
 
     doesBoxAreaExists() {
@@ -51,12 +50,12 @@ class Box {
     }
 
     drawBoxOn() {
-        if (this.angle != null) {
+        if (this.angle > 0 && this.angle != null) {
             this.rotateBox();
         }
         else {
             ctx.beginPath();
-            ctx.strokeStyle = "#ff0000";
+            ctx.strokeStyle = getStrokeColor(this.labelId) || "#ff0000";
             ctx.rect(this.x1, this.y1, (this.x2 - this.x1), (this.y2 - this.y1));
             ctx.closePath();
             ctx.stroke();
@@ -116,7 +115,7 @@ class Box {
         // rotate the rect
         // ctx.rotate(box.angle * Math.PI / 180);
         ctx.rotate(this.angle * Math.PI / 180);
-        ctx.strokeStyle = "#ff0000";
+        ctx.strokeStyle = getStrokeColor(this.labelId) || "#ff0000";
         // draw the rect on the transformed context
         // Note: after transforming [0,0] is visually [x,y]
         //       so the rect needs to be offset accordingly when drawn
@@ -159,12 +158,12 @@ class Canvas {
     getSelectedBox() {
         var i = clickedArea.box;
         return new Box(boxes[i].id, boxes[i].x1, boxes[i].x2, boxes[i].y1, boxes[i].y2,
-            boxes[i].angle, boxes[i].boundingBoxNumber, boxes[i].photoId, boxes[i].action);
+            boxes[i].angle, boxes[i].boundingBoxNumber, boxes[i].photoId, boxes[i].action, boxes[i].labelId);
     }
 
     findCurrentArea() {
         for (var i = 0; i < boxes.length; i++) {
-            var box = new Box(boxes[i].id, boxes[i].x1, boxes[i].x2, boxes[i].y1, boxes[i].y2, boxes[i].angle, boxes[i].boundingBoxNumber, boxes[i].photoId, boxes[i].action);
+            var box = new Box(boxes[i].id, boxes[i].x1, boxes[i].x2, boxes[i].y1, boxes[i].y2, boxes[i].angle, boxes[i].boundingBoxNumber, boxes[i].photoId, boxes[i].action, boxes[i].labelId);
             var xCenter = box.xCenter;
             var yCenter = box.yCenter;
           
@@ -263,7 +262,7 @@ class Canvas {
         for (var i = 0; i < boxes.length; i++) {
 
             let box = new Box(boxes[i].id, boxes[i].x1, boxes[i].x2, boxes[i].y1, boxes[i].y2,
-                boxes[i].angle, boxes[i].boundingBoxNumber, boxes[i].photoId, boxes[i].action);
+                boxes[i].angle, boxes[i].boundingBoxNumber, boxes[i].photoId, boxes[i].action, boxes[i].labelId);
 
                 box.drawBoxOn();
             
@@ -274,7 +273,7 @@ class Canvas {
         if (clickedArea.box != -1) {
             var i = clickedArea.box;
             let selectedBox = new Box(boxes[i].id, boxes[i].x1, boxes[i].x2, boxes[i].y1, boxes[i].y2,
-                boxes[i].angle, boxes[i].boundingBoxNumber, boxes[i].photoId, boxes[i].action);
+                boxes[i].angle, boxes[i].boundingBoxNumber, boxes[i].photoId, boxes[i].action, boxes[i].labelId);
 
             if (selectedBox.angle != null) {
                 selectedBox.rotateBox();
@@ -335,7 +334,12 @@ function handleMouseDown(e) {
             $("#btnDelete").removeClass("disabled");
             document.getElementById("btnDelete").disabled = false;
 
+            $("#btnOpenModal").removeClass("disabled");
+            document.getElementById("btnOpenModal").disabled = false;
+
             selectedBoxIndex = clickedArea.box;
+            $("#selectedLabelId").val(boxes[selectedBoxIndex].labelId);
+
             iCanvas.redraw();
 
             let selectedBox = iCanvas.getSelectedBox();
@@ -350,6 +354,9 @@ function handleMouseDown(e) {
             $("#btnDelete").addClass("disabled");
             document.getElementById("btnDelete").disabled = true;
 
+            $("#btnOpenModal").addClass("disabled");
+            document.getElementById("btnOpenModal").disabled = true;
+
             iCanvas.redraw();
         }
     }
@@ -363,8 +370,13 @@ function handleMouseUp(e) {
         if (clickedArea.box == -1 && tmpBox != null) {
 
             if (tmpBox.doesBoxAreaExists()) {
-                boxes.push(tmpBox);
-                updateHiddenFieldFromBoxes();
+
+                $("#hdnTempBox").val(JSON.stringify(tmpBox));
+                $("#selectedLabelId").val("-1");
+                openModal('A'); //Open labels modal to select a label
+           
+                //boxes.push(tmpBox);
+                //updateHiddenFieldFromBoxes();
 
 
                 // iCanvas.redraw();
@@ -373,6 +385,8 @@ function handleMouseUp(e) {
                 var initialBoxes = $("#ClientSideBoundingBoxData").val();
                 boxes = JSON.parse(initialBoxes) == null ? [] : JSON.parse(initialBoxes);
                 iCanvas.redraw();
+
+              
             }
 
         }
@@ -391,9 +405,11 @@ function handleMouseUp(e) {
             }
 
             var modifiedBox = new Box(selectedBox.id, selectedBox.x1, selectedBox.x2, selectedBox.y1, selectedBox.y2, selectedBox.angle,
-                selectedBox.boundingBoxNumber, selectedBox.photoId, selectedBox.action);
+                selectedBox.boundingBoxNumber, selectedBox.photoId, selectedBox.action, selectedBox.labelId);
 
             boxes[clickedArea.box] = modifiedBox;
+
+            $("#hdnTempBox").val(JSON.stringify(modifiedBox));
 
             //Check if box overlap with other existing boxes when moved, resized or rotated
             var isOverlap = false;
@@ -406,6 +422,7 @@ function handleMouseUp(e) {
 
             checkBoxExistAndOverlap(selectedBox);
 
+          
         }
         clickedArea = { box: -1, pos: 'o' };
         tmpBox = null;
@@ -433,7 +450,7 @@ function handleMouseOut(e) {
             }
 
             var modifiedBox = new Box(selectedBox.id, selectedBox.x1, selectedBox.x2, selectedBox.y1, selectedBox.y2, selectedBox.angle,
-                selectedBox.boundingBoxNumber, selectedBox.photoId, selectedBox.action);
+                selectedBox.boundingBoxNumber, selectedBox.photoId, selectedBox.action, selectedBox.labelId);
 
             boxes[clickedArea.box] = modifiedBox;
 
@@ -682,7 +699,7 @@ function newBox(x1, y1, x2, y2) {
     var prevBoxNo = len == 0 ? 0 : boxes[len - 1].boundingBoxNumber;
    
     if (boxX2 - boxX1 > lineOffset * 2 && boxY2 - boxY1 > lineOffset * 2) {
-        var newBox = new Box(null, boxX1, boxX2, boxY1, boxY2, null, (prevBoxNo + 1), photoId, AddAct); //Add = "A"
+        var newBox = new Box(null, boxX1, boxX2, boxY1, boxY2, null, (prevBoxNo + 1), photoId, AddAct,null); //Add = "A"
 
         if (!willRectangleOverlap(newBox)) {
             return newBox;

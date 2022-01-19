@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 
 namespace WebApp.Models
 {
@@ -14,5 +15,6 @@ namespace WebApp.Models
         public int BoundingBoxNumber { get; set; }
         public int PhotoId { get; set; }
         public string Action { get; set; }
+        public int? LabelId { get; set; }
     }
 }

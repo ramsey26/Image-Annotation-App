@@ -1,0 +1,32 @@
+﻿@{
+    Layout = null;
+}
+
+@{
+    string uid = TempData["uid"].ToString();
+    string linkUid = "li_" + uid;
+    string idBtnSave = "btnSave_" + uid;
+    string idBtnCancel = "btnCancel_" + uid;
+    string idBtnEdit = "btnEdit_" + uid;
+    string idBtnDelete = "btnDelete_" + uid;
+    string wrapperDivId = "wrapperDiv_" + uid;
+    string iconCircle = "iconCircle_" + uid;
+    string hdnLabelText = "hdnLabelText_" + uid;
+}
+<script>
+    $(document).ready(function () {
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+</script>
+<div id=@wrapperDivId style="border: 2px solid red; float: left;">
+     <i id=@iconCircle class="fa fa-circle" style="font-size:15px;color:red"></i>
+    <input id=@uid style="margin-left:15px;" type="text" value="" onkeyup="onKeyUp(this.value, '@uid')" placeholder="Enter Lable name" />
+    <input type="hidden" id="@hdnLabelText" value="" />
+
+    <button  data-toggle="tooltip" data-placement="right" title="Save" id=@idBtnSave class="btn" style="margin-left:40px;" disabled onclick="saveLabel('@uid');"><span class="glyphicon">&#xe013;</span></button>
+    <button  data-toggle="tooltip" data-placement="right" title="Cancel" id=@idBtnCancel class="btn" onclick="cancelLabel('@uid'); return false;"><span class="glyphicon">&#xe014;</span></button>
+   
+    <button  data-toggle="tooltip" data-placement="right" title="Edit" id=@idBtnEdit class="btn hideBtn" style="margin-left:40px;" onclick="editLabel('@uid'); return false;"> <i class='fas fa-edit' style='font-size:15px'></i></button>
+    <button  data-toggle="tooltip" data-placement="right" title="Delete" id=@idBtnDelete class="btn hideBtn" onclick="deleteLabel('@uid');"><i class='fa fa-trash' style='font-size:14px'></i></button>
+   
+</div>
