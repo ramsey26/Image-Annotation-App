@@ -4,6 +4,7 @@
 
 @{
     string uid = TempData["uid"].ToString();
+    string labelId = "label_" + uid;
     string linkUid = "li_" + uid;
     string idBtnSave = "btnSave_" + uid;
     string idBtnCancel = "btnCancel_" + uid;
@@ -20,7 +21,7 @@
 </script>
 <div id=@wrapperDivId style="border: 2px solid red; float: left;">
      <i id=@iconCircle class="fa fa-circle" style="font-size:15px;color:red"></i>
-    <input id=@uid style="margin-left:15px;" type="text" value="" onkeyup="onKeyUp(this.value, '@uid')" placeholder="Enter Lable name" />
+    <input id=@labelId style="margin-left:15px;" type="text" value="" onkeyup="onKeyUp(this.value, '@uid')" placeholder="Enter Lable name" />
     <input type="hidden" id="@hdnLabelText" value="" />
 
     <button  data-toggle="tooltip" data-placement="right" title="Save" id=@idBtnSave class="btn" style="margin-left:40px;" disabled onclick="saveLabel('@uid');"><span class="glyphicon">&#xe013;</span></button>

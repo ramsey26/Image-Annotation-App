@@ -8,8 +8,8 @@
     .mainContainer {
         width: 100%;
         height: 570px;
-      /*  border: 2px solid black;*/
-      background-color:darkgrey;
+        /*  border: 2px solid black;*/
+        background-color: darkgrey;
     }
 
     .leftDiv {
@@ -23,14 +23,14 @@
     .midDiv {
         @*background-image: url( @VirtualPathUtility.ToAbsolute("~/UploadedFiles/no-image.jpg") );
         background-repeat: inherit;
-        background-size: 640px 480px;*@
-        float: left;
+        background-size: 640px 480px;
+        *@ float: left;
         width: 640px;
         height: 480px;
         display: block;
         margin-left: 15px;
-       /* border: 2px solid black;*/
-        margin-top:0px;
+        /* border: 2px solid black;*/
+        margin-top: 0px;
     }
 
     .rightDiv {
@@ -61,26 +61,39 @@
         border-radius: 25px;
         border: 2px solid #73AD21;
         padding: 3px;
-        width:auto;
+        width: auto;
     }
 
     .projectNameDiv {
         height: 35px;
         padding: 2px 5px 2px 5px;
-        margin-left:30px;
+        margin-left: 30px;
     }
 
     .uploadFileDiv {
         height: 35px;
         padding: 0px 50px 30px 15px;
-        float:right;
+        float: right;
     }
+
     .hideBtn {
         display: none;
     }
+
 </style>
+<script>
 
+    function ready() {
+        $('.spinner').css('display', 'block');
+    }
 
+    window.addEventListener('load', (event) => {
+        $('.spinner').css('display', 'none');
+    });
+
+    document.addEventListener("DOMContentLoaded", ready);
+
+</script>
 @using (Html.BeginForm("Dashboard", "Dashboard", FormMethod.Post, new { id = DashboardController.DashboardForm, encType = "multipart/form-data" }))
 {
     @Html.Hidden("GetGridViewDataUrl", Url.Action("GetGridViewData", "Dashboard"))
@@ -91,6 +104,7 @@
     @Html.Hidden("AddLabelViewUrl", Url.Action("GetAddLablesPartial", "Dashboard"))
     @Html.Hidden("SaveLabelUrl", Url.Action("SaveLabelData", "Dashboard"))
     @Html.Hidden("DeleteLabelDataUrl", Url.Action("DeleteLabelData", "Dashboard"))
+    @Html.Hidden("GenerateXmlUrl",Url.Action("GenerateXmlData","Dashboard"))
     @Html.Hidden("UserProjectId",Model.UserProjectWithPhotosDto.Id)
 
     <div style="margin-top:10px;">

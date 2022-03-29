@@ -61,5 +61,25 @@ namespace WebApp.Services
 
             return projectCreated;
         }
+
+        public async Task<bool> UpdateUserProject(int userProjectId)
+        {
+            bool projectUpdated = false;
+            
+            HttpResponseMessage resp = await client.PostAsJsonAsync("api/UserProjects/update-project",userProjectId);
+            //resp.EnsureSuccessStatusCode();
+
+            if (resp.IsSuccessStatusCode)
+            {
+                projectUpdated = true;
+            }
+            else if (resp.StatusCode == HttpStatusCode.BadRequest)
+            {
+                var error = await resp.Content.ReadAsAsync<string>();
+                throw new HttpException(error);
+            }
+
+            return projectUpdated;
+        }
     }
 }

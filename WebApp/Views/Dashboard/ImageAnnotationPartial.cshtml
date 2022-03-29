@@ -3,8 +3,13 @@
 
 @{
     int noOfImages = Model.Photos.Count();
+    string projectText = Model.IsCompleted ? "Project Completed" : "Complete Project";
 }
 <style>
+    .hideButton{
+        display:none;
+    }
+
     .btni {
         background-color: dodgerblue;
         border: none;
@@ -22,7 +27,7 @@
     .divFiles {
         border: 1px solid green;
         background-color: whitesmoke;
-        height:50%;
+        height: 50%;
     }
 
     .divFilesViewPartial {
@@ -33,7 +38,7 @@
     }
 
     .nextprev {
-        font-size: 18px;
+        font-size: 15px;
         font-family: 'Source Sans Pro', sans-serif;
         padding-left: 2px;
         padding-right: 2px;
@@ -43,8 +48,7 @@
         float: right;
     }
 
-    .w3-left
-    {
+    .w3-left {
         background-color: #04AA6D;
         color: #ffffff;
         border-color: #04AA6D;
@@ -57,7 +61,7 @@
     }
 
     .labelsHeader {
-        padding:2px;
+        padding: 2px;
         height: 12%;
         background-color: #a9a9a9;
     }
@@ -67,15 +71,25 @@
         overflow-y: scroll;
         background-color: whitesmoke;
     }
+
     .wrapperSelectDiv {
         width: 200px;
         padding: 20px;
         height: 150px;
     }
+
+    .buttonload {
+        background-color: #04AA6D; /* Green background */
+        border: none; /* Remove borders */
+        color: white; /* White text */
+        padding: 5px 7px; /* Some padding */
+        font-size: 14px; /* Set a font-size */
+    }
+
 </style>
 <script>
     $(document).ready(function () {
-    
+        debugger;
         var firstPhotoId = $("#hdnPhotoId").val();
         if (firstPhotoId != "") {
 
@@ -87,10 +101,11 @@
 
         $('#btnSaveModal').click(function () {
             debugger;
-            const selectedValue = $("#selectedLabelId").val();
+            var selectedValue = $("#selectedLabelId").val();
 
             if (selectedValue != "") {
 
+                //#region Polygon Section
                 if (polygonFlag) {
                     const jsonObj = JSON.parse($("#hdnTempPolygon").val());
 
@@ -100,22 +115,38 @@
                     tempPolygon.labelId = parseInt(selectedValue);
 
                     if (tempPolygon.id == null) {
-                        tempPolygon.action = AddAct;
+                        tempPolygon.action = AddAct;   //Action = add Polygon
+
+                        var filterPoly = polygons.filter((val) => {
+                            return val.polygonNo == tempPolygon.polygonNo;
+                        });
+
+                        if (filterPoly.length == 0) {
+                            //add
+                            polygons.push(tempPolygon);
+                        }
+                        else {
+                            //edit
+                            let existingPolygon = filterPoly[0];
+                            polygons[polygons.map((x, i) => [i, x]).filter(x => x[1] == existingPolygon)[0][0]] = tempPolygon;
+                        }
                     }
                     else {
-                        tempPolygon.action = EditAct;
+                        tempPolygon.action = EditAct;  //Action = edit Polygon
+
+                        var filterPoly = polygons.filter((val) => {
+                            return val.polygonNo == tempPolygon.polygonNo;
+                        });
+                        let existingPolygon = filterPoly[0];
+                        polygons[polygons.map((x, i) => [i, x]).filter(x => x[1] == existingPolygon)[0][0]] = tempPolygon;
                     }
-
-                    let filteredPolygons = polygons.filter((value) => {
-                        return value.id != tempPolygon.id;
-                    });
-                    polygons = filteredPolygons;
-
-                    polygons.push(tempPolygon);
 
                     updateHiddenFieldPolygon();
                     drawPolygon();
                 }
+                //#endregion
+
+                //#region Box Section
                 else {
                     const jsonObj = JSON.parse($("#hdnTempBox").val());
 
@@ -126,21 +157,37 @@
 
                     if (tempBox.id == null) {
                         tempBox.action = AddAct; //Action = add box
+
+                        var filterBox = boxes.filter((val) => {
+                            return val.boundingBoxNumber == tempBox.boundingBoxNumber;
+                        });
+
+                        if (filterBox.length == 0) {
+                            //add
+                            boxes.push(tempBox);
+                        }
+                        else {
+                            //edit
+                            let existingBox = filterBox[0];
+                            boxes[boxes.map((x, i) => [i, x]).filter(x => x[1] == existingBox)[0][0]] = tempBox;
+                        }
                     }
                     else {
                         tempBox.action = EditAct; //Action = edit box
+
+                        var filterBox = boxes.filter((val) => {
+                            return val.boundingBoxNumber == tempBox.boundingBoxNumber;
+                        });
+
+                        let existingBox = filterBox[0];
+                        boxes[boxes.map((x, i) => [i, x]).filter(x => x[1] == existingBox)[0][0]] = tempBox;
                     }
 
-                    let filteredBoxes = boxes.filter((value) => {
-                        return value.id != tempBox.id;
-                    });
-                    boxes = filteredBoxes;
-
-                    boxes.push(tempBox);
                     updateHiddenFieldFromBoxes();
                     iCanvas.redraw();
                 }
-                
+                //#endregion
+
                 $('#labelModalWindow').modal('hide');
                 //$("#selectedLabelId").val("");
                 //$("#hdnTempBox").val("");
@@ -149,7 +196,7 @@
             else {
                 showToastrJs(error, "Please select a label before saving.");
             }
-            
+
         });
 
         $('#labelModalWindow').on('shown.bs.modal', function () {
@@ -184,6 +231,27 @@
             }
            
         });
+
+        ////Set toggle switch On/Off on IsComplete property value 
+        //if ($("#IsProjectCompleted").val() == "True") {
+        //    document.getElementById("projectSwitch").checked = true;
+        //}
+        //else {
+        //    document.getElementById("projectSwitch").checked = false;
+        //}
+
+        //$("#projectSwitch").change(function () {
+        //    if (this.checked) {
+        //        generateXml(true); //if project is being completed then generate xml 
+        //    } else {
+        //        generateXml(false); //if project is incomplete then just update IsCompleted flag to false 
+        //    }
+        //});
+
+        if ($("#IsProjectCompleted").val() == "True") {
+            document.getElementById("btnCompleteProject").disabled = true;
+        }
+
     });
 
     function openFolder() {
@@ -240,10 +308,11 @@
     @Html.Hidden("hdnPhotoCount", Model.Photos?.Count())
     @Html.Hidden("hdnPreviousPhotoId", 0)
     @Html.Hidden("hdnNextPhotoId", noOfImages > 1 ? 2 : 0) @*//If there are more than 1 photos then set next elementId equal to 2*@
+    @Html.Hidden("IsProjectCompleted", Model.IsCompleted)
 
     <div class="leftDiv">
         @*@if (noOfImages > 0)
-            {*@
+        {*@
         <div hidden>
             <button class="btn" onclick="openFolder(); return false;"
                     style="margin-left: 10px; margin-top: 20px; cursor: pointer; background: cadetblue; border: 1px solid darkslategrey;" width="70" height="70">
@@ -252,34 +321,36 @@
             <h5 style="margin-left:5px;color:white;">Upload Files</h5>
         </div>
 
-        <img id="btnRect" src="~/UploadedFiles/VioRect.png" class="btn" data-toggle="tooltip" data-placement="right" title="Draw Bounding box on image"
+        <img id="btnRect" alt="rectangle button" src="~/UploadedFiles/VioRect.png" class="btn" data-toggle="tooltip" data-placement="right" title="Draw Bounding box on image"
              style="margin-left:10px;margin-top:20px;cursor:pointer;" width="70" height="70" onclick="InitializeRectangleAnnotation(); return false;" />
         <hr />
-        <img id="btnCircle" src="~/UploadedFiles/VioCircle.png" class="btn" data-toggle="tooltip" data-placement="right" title="Draw Circle on image"
+        <img id="btnCircle" alt="circle button" src="~/UploadedFiles/VioCircle.png" class="btn" data-toggle="tooltip" data-placement="right" title="Draw Circle on image"
              style="margin-left:10px;cursor:pointer;display:none;" width="70" height="70" />
 
         @*<hr />*@
-        <img id="btnPolygon" src="~/UploadedFiles/VioPolygon.png" class="btn" data-toggle="tooltip" data-placement="right" title="Draw Polygon on image"
+        <img id="btnPolygon" alt="polygon button" src="~/UploadedFiles/VioPolygon.png" class="btn" data-toggle="tooltip" data-placement="right" title="Draw Polygon on image"
              style="margin-left:10px;cursor:pointer;" width="70" height="70" onclick="InitializePolygonAnnotation(); return false;" />
         <hr />
         @*}*@
-    </div>
+  
+         
+        </div>
     <div class="midDiv">
         <div id="divBtns">
             @*@if (noOfImages > 0)
-                {*@
+        {*@
             <div style="margin-top: 5px; float: left; border: 2px solid darkorchid;">
                 @*<input id="btnSave" class="btn btn-success disabled" style="cursor: pointer;" onclick="saveBoundingBox(); return false;" type="button" value="Save" />
-        <input id="btnDelete" class="btn btn-danger disabled" style="cursor: pointer;" onclick="removeBoundingBox(); return false;" type="button" value="Delete" />*@
+            <input id="btnDelete" class="btn btn-danger disabled" style="cursor: pointer;" onclick="removeBoundingBox(); return false;" type="button" value="Delete" />*@
                 <button id="btnSave" data-toggle="tooltip" data-placement="bottom" title="Save" class="btni btn-success disabled" disabled onclick="saveAnnotations(); return false;"><i class="fa fa-save"></i></button>
                 <button id="btnDelete" data-toggle="tooltip" data-placement="bottom" title="Delete" class="btni btn-danger disabled" disabled onclick="removeAnnotations(); return false;"><i class="fa fa-trash"></i></button>
                 <button id="btnRefresh" data-toggle="tooltip" data-placement="bottom" title="Refresh" class="btni btn-info disabled" disabled onclick="refreshAnnotations(); return false;"><i class="fa fa-refresh"></i></button>
                 <button id="btnDownload" data-toggle="tooltip" data-placement="bottom" title="Download" class="btni btn-info disabled" disabled onclick="download(); return false;"><i class="fas fa-download"></i></button>
                 <a id="lnkDownloadImage" hidden class="btni btn-info" download="myImage.jpg" href="" onclick="download_img(this);"><i class='fas fa-download'></i></a>
-                <button id="btnOpenModal" data-toggle="tooltip" data-placement="bottom" title="Edit Label" class="btni btn-info disabled" disabled onclick="openModal('E'); return false;" ><i class='fas fa-edit'></i></button>
+                <button id="btnOpenModal" data-toggle="tooltip" data-placement="bottom" title="Edit Label" class="btni btn-info disabled" disabled onclick="openModal('E'); return false;"><i class='fas fa-edit'></i></button>
                 <button hidden id="hdnBtnModal" data-placement="bottom" class="btni btn-info" data-toggle="modal" data-target="#labelModalWindow"></button>
                 @*<i title="Save" class="fa fa-save" onclick="saveBoundingBox(); return false;" style="font-size:36px;color:cornflowerblue;cursor:pointer;"></i>
-        <i title="Remove" class="fa fa-remove" onclick="removeBoundingBox(); return false;" style="font-size:36px;color:red;cursor:pointer;"></i>*@
+            <i title="Remove" class="fa fa-remove" onclick="removeBoundingBox(); return false;" style="font-size:36px;color:red;cursor:pointer;"></i>*@
             </div>
             <div id="divBtn" class="nextprev">
                 <button id="btnPrevious" class="btn w3-left" onclick="saveChngBeforeToggleImage('P'); return false;">❮ Previous</button>
@@ -294,110 +365,122 @@
                 <img src="~/UploadedFiles/no-image.jpg" style="width: 640px; height: 480px; background-repeat: inherit; display: block;" />
             </div>
             @*@if (noOfImages > 0)
-                {
-                    @Html.Partial("CanvasViewPartial",)
-                }*@
+            {
+                @Html.Partial("CanvasViewPartial",)
+            }*@
         </div>
+    
 
     </div>
-    <div class="rightDiv">
-        @*<div id="divGridViewPartial" style="width: 100%; height: 100%;">
+        <div class="rightDiv">
+            @*<div id="divGridViewPartial" style="width: 100%; height: 100%;">
                 @Html.Partial("GridViewPartial", Model.Photos)
             </div>*@
 
-        <div class="divLabels">
-            <div class="labelsHeader">
-                <button class="btn btn-success" style="height:30px;width:auto;padding:2px" onclick="createLabel(); return false;">
-                    Create Lable <i class='fas fa-plus' style='font-size:13px'></i>
-                </button>
-            </div>
-            <div class="labelsBody">
-                <ul id="listLabels" style="list-style-type: none;padding:0;margin:0;">
-                    @if (Model.Labels != null)
-                    {
-                        for (int i = 0; i < Model.Labels.Count(); i++)
-                        {
-                            string uid = Convert.ToString(Model.Labels[i].Id);
-                            string linkUid = "li_" + uid;
-                            string divId = "div_" + uid;
-                            string idBtnSave = "btnSave_" + uid;
-                            string idBtnCancel = "btnCancel_" + uid;
-                            string idBtnEdit = "btnEdit_" + uid;
-                            string idBtnDelete = "btnDelete_" + uid;
-                            string wrapperDivId = "wrapperDiv_" + uid;
-                            string iconCircle = "iconCircle_" + uid;
-                            string hdnLabelText = "hdnLabelText_" + uid;
-                            string color = Model.Labels[i].Color == null ? "red" : Model.Labels[i].Color;
+            <div class="divLabels">
+                <div class="labelsHeader">
+                    <button class="btn btn-success" style="height:30px;width:auto;padding:2px" onclick="createLabel(); return false;">
+                        Create Lable <i class='fas fa-plus' style='font-size:13px'></i>
+                    </button>
 
-                            <li id=@linkUid>
-                                <div id=@wrapperDivId style="border: 1px solid lightseagreen; float: left;">
-                                    <i id=@iconCircle class="fa fa-circle" style="font-size: 15px; color:@color"></i>
-                                    <input id=@uid style="margin-left:15px;" readonly type="text" value="@Model.Labels[i].LabelName" onkeyup="onKeyUp(this.value, '@uid')" placeholder="Enter Lable name" labelId="@uid" />
-                                    <input type="hidden" id="@hdnLabelText" value="" />
+                    <button id="btnCompleteProject" class="btn buttonload" onclick="generateXml();" style="float:right;" data-toggle="tooltip"
+                            data-placement="bottom" title="Click here to complete project">
+                        <i id="iLoad" class="fa fa-circle-o-notch fa-spin hide"></i> @projectText ❯
+                    </button>
 
-                                    <button data-toggle="tooltip" data-placement="right" title="Save" id=@idBtnSave class="btn hideBtn" style="margin-left:40px;" disabled onclick="saveLabel('@uid');"><span class="glyphicon">&#xe013;</span></button>
-                                    <button data-toggle="tooltip" data-placement="right" title="Cancel" id=@idBtnCancel class="btn hideBtn" onclick="cancelLabel('@uid'); return false;"><span class="glyphicon">&#xe014;</span></button>
+                    <button hidden id="btnLoadingProject" class="buttonload" style="float: right;">
+                        <i class="fa  fa-circle-o-notch fa-spin"></i>Loading
+                    </button>
 
-                                    <button data-toggle="tooltip" data-placement="right" title="Edit" id=@idBtnEdit class="btn" style="margin-left:40px;" onclick="editLabel('@uid'); return false;"><i class='fas fa-edit' style='font-size:15px'></i></button>
-                                    <button data-toggle="tooltip" data-placement="right" title="Delete" id=@idBtnDelete class="btn" onclick="deleteLabel('@uid');"><i class='fa fa-trash' style='font-size:14px'></i></button>
-
-                                </div>
-                            </li>
-                        }
-                    }
-                </ul>
-            </div>
-            <div class="lblSpinner" style="display:none">
-                <div class="center-div">
-                    <div class="inner-div">
-                        <div class="loader"></div>
-                    </div>
                 </div>
-            </div>
-        </div>
-        <div class="divFiles">
-            <div style="height:10%">
-                <label style="color: cadetblue;float:left;margin-left:5px;">Photo List</label>
-                <label id="headerPhotoCount" style="color: black; margin-left: 5px;margin-right:5px; float: right;">@noOfImages</label>
-                <label style="color: cadetblue;float: right;margin-left:0px">Total Photos:</label>
-            </div>
-            <div class="divFilesViewPartial">
-                <ul id="listFiles" style="list-style-type: none;padding:0;margin:0;">
-                    @if (Model.Photos != null)
-                    {
-                        for (int i = 0; i < Model.Photos.Count(); i++)
+                <div class="labelsBody">
+                    <ul id="listLabels" style="list-style-type: none;padding:0;margin:0;">
+                        @if (Model.Labels != null)
                         {
+                            for (int i = 0; i < Model.Labels.Count(); i++)
                             {
-                                var id = i + 1;
-                                string elementId = Convert.ToString(id);
+                                string uid = Convert.ToString(Model.Labels[i].Id);
+                                string labelId = "label_" + uid;
+                                string linkUid = "li_" + uid;
+                                string divId = "div_" + uid;
+                                string idBtnSave = "btnSave_" + uid;
+                                string idBtnCancel = "btnCancel_" + uid;
+                                string idBtnEdit = "btnEdit_" + uid;
+                                string idBtnDelete = "btnDelete_" + uid;
+                                string wrapperDivId = "wrapperDiv_" + uid;
+                                string iconCircle = "iconCircle_" + uid;
+                                string hdnLabelText = "hdnLabelText_" + uid;
+                                string color = Model.Labels[i].Color == null ? "red" : Model.Labels[i].Color;
 
-                                <li>
-                                    <a id=@elementId href="" class="list-group-item" onclick='openImageInCanvas("@Model.Photos[i].Id",@elementId); return false;'>
-                                        @Model.Photos[i].FileName
-                                    </a>
+                                <li id=@linkUid>
+                                    <div id=@wrapperDivId style="border: 1px solid lightseagreen; float: left;">
+                                        <i id=@iconCircle class="fa fa-circle" style="font-size: 15px; color:@color"></i>
+                                        <input id=@labelId style="margin-left:15px;" readonly type="text" value="@Model.Labels[i].LabelName" onkeyup="onKeyUp(this.value, '@uid')" placeholder="Enter Lable name" labelId="@uid" />
+                                        <input type="hidden" id="@hdnLabelText" value="" />
+
+                                        <button data-toggle="tooltip" data-placement="right" title="Save" id=@idBtnSave class="btn hideBtn" style="margin-left:40px;" disabled onclick="saveLabel('@uid');"><span class="glyphicon">&#xe013;</span></button>
+                                        <button data-toggle="tooltip" data-placement="right" title="Cancel" id=@idBtnCancel class="btn hideBtn" onclick="cancelLabel('@uid'); return false;"><span class="glyphicon">&#xe014;</span></button>
+
+                                        <button data-toggle="tooltip" data-placement="right" title="Edit" id=@idBtnEdit class="btn" style="margin-left:40px;" onclick="editLabel('@uid'); return false;"><i class='fas fa-edit' style='font-size:15px'></i></button>
+                                        <button data-toggle="tooltip" data-placement="right" title="Delete" id=@idBtnDelete class="btn" onclick="deleteLabel('@uid');"><i class='fa fa-trash' style='font-size:14px'></i></button>
+
+                                    </div>
                                 </li>
                             }
                         }
-                    }
-                </ul>
+                    </ul>
+                </div>
+                <div class="lblSpinner" style="display:none">
+                    <div class="center-div">
+                        <div class="inner-div">
+                            <div class="loader"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
+            <div class="divFiles">
+                <div style="height:10%">
+                    <label style="color: cadetblue;float:left;margin-left:5px;">Photo List</label>
+                    <label id="headerPhotoCount" style="color: black; margin-left: 5px;margin-right:5px; float: right;">@noOfImages</label>
+                    <label style="color: cadetblue;float: right;margin-left:0px">Total Photos:</label>
+                </div>
+                <div class="divFilesViewPartial">
+                    <ul id="listFiles" style="list-style-type: none;padding:0;margin:0;">
+                        @if (Model.Photos != null)
+                        {
+                            for (int i = 0; i < Model.Photos.Count(); i++)
+                            {
+                                {
+                                    var id = i + 1;
+                                    string elementId = Convert.ToString(id);
+
+                                    <li>
+                                        <a id=@elementId href="" class="list-group-item" onclick='openImageInCanvas("@Model.Photos[i].Id",@elementId); return false;'>
+                                            @Model.Photos[i].FileName
+                                        </a>
+                                    </li>
+                                }
+                            }
+                        }
+                    </ul>
+                </div>
+            </div>
+
         </div>
 
-    </div>
+        <!-- Modal -->
+        <div class="modal fade" id="labelModalWindow" role="dialog">
+            <div class="modal-dialog modal-sm">
 
-    <!-- Modal -->
-    <div class="modal fade" id="labelModalWindow" role="dialog">
-        <div class="modal-dialog modal-sm">
+                <!-- Modal content-->
+                <div class="modal-content" style="width:350px;">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h4 id="titleModal" class="modal-title" style="color:blueviolet">Edit Annotation Label:</h4>
+                    </div>
+                    <div class="modal-body form-group" style="height: 150px;">
+                        <label style="margin-left:15px;" for="sel1">Label:</label>
 
-            <!-- Modal content-->
-            <div class="modal-content" style="width:350px;">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 id="titleModal" class="modal-title" style="color:blueviolet">Edit Annotation Label:</h4>
-                </div>
-                <div class="modal-body form-group" style="height: 150px;">
-                    <label style="margin-left:15px;" for="sel1">Label:</label>
-                  
                         <select style="margin-inline:auto;" onchange="onChangeSelectLabel(this.value); this.size = 1; this.blur();"
                                 onblur="this.size = 1;" onfocus="this.size = 5;"
                                 class="form-control" name="idlabelSelect" id="idlabelSelect">
@@ -410,15 +493,15 @@
                                 }
                             }
                         </select>
-                
-                   
-                </div>
-                <div class="modal-footer">
-                    <button id="btnSaveModal" type="button" class="btn btn-success disabled" disabled>Save</button>
-                    <button id="btnCancelModal" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                </div>
-            </div>
 
+
+                    </div>
+                    <div class="modal-footer">
+                        <button id="btnSaveModal" type="button" class="btn btn-success disabled" disabled>Save</button>
+                        <button id="btnCancelModal" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+
+            </div>
         </div>
     </div>
-</div>

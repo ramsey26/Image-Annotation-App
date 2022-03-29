@@ -24,6 +24,7 @@ namespace WebApp.Controllers
         public const string UploadFileForm = "UploadFileForm";
         public const string SessionKeyCanvasData = "CanvasData";
         public const string GeneratedImagesVirtualPath = "~/GeneratedImages/";
+        public const string GeneratedXMLVirtualPath = "~/GeneratedXML/";
         public const string SessionProjectKey = "ProjectKey";
         public const string SessionLablesKey = "LabelKey";
 
@@ -42,7 +43,7 @@ namespace WebApp.Controllers
         public async Task<ActionResult> Dashboard(string projectName)
         {
             Session[SessionProjectKey] = projectName;
-          
+
             UserProjectsWithPhotosDto userProjectsWithPhotosDto;
 
             DashboardViewModel dashboardViewModel = new DashboardViewModel();
@@ -52,8 +53,8 @@ namespace WebApp.Controllers
             if (userProjectsWithPhotosDto == null)
             {
                 userProjectsWithPhotosDto = await userProjectService.GetUserProjectByNameAsync(projectName);
-              
-                if (userProjectsWithPhotosDto !=null)
+
+                if (userProjectsWithPhotosDto != null)
                 {
                     foreach (var image in userProjectsWithPhotosDto.Photos)
                     {
@@ -420,6 +421,79 @@ namespace WebApp.Controllers
             };
 
             return Json(savedData);
+        }
+
+        [ActionName("GenerateXmlData")]
+        [Route("GenerateXmlData")]
+        public async Task<ActionResult> GenerateXmlData(bool xmlFlag)
+        {
+            try
+            {
+                SavedData savedData = null;
+                string sessionProjectName = (string)Session[SessionProjectKey];
+                var dashboardData = (UserProjectsWithPhotosDto)Session[sessionProjectName];
+
+                //First set isCompleted flag to true in UserProject table then generate xml files 
+                bool isSuccess = await userProjectService.UpdateUserProject(dashboardData.Id); //id is userproject id 
+
+                if (isSuccess)
+                {
+                    dashboardData.IsCompleted = dashboardData.IsCompleted != true;
+                    Session[sessionProjectName] = dashboardData;
+
+                    savedData = new SavedData()
+                    {
+                        Id = 1,
+                        IsSaved = true
+                    };
+                }
+                else
+                {
+                    savedData = new SavedData()
+                    {
+                        Id = 0,
+                        IsSaved = false
+                    };
+                }
+
+                if (isSuccess && xmlFlag)
+                {
+                    //Generate xml files for all the images been uploaded by user
+                    foreach (var photo in dashboardData.Photos)
+                    {
+                        string path = Server.MapPath(GeneratedXMLVirtualPath) + string.Format("{0}_{1}.xml", photo.FileName, photo.Id);
+                        var boundingBoxDataModels = await dashboardService.GetBoxByPhotoId(photo.Id);
+
+                        annotation _annotation = new annotation(dashboardData.Labels, boundingBoxDataModels)
+                        {
+                            filename = photo.FileName,
+                            path = path,
+                            size ={
+                                width = 640,
+                                height =480,
+                                depth = 0
+                            }
+                        };
+
+                        System.Xml.Serialization.XmlSerializer writer =
+                       new System.Xml.Serialization.XmlSerializer(typeof(annotation));
+
+                        // var path = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "//GeneratedPhotoXML.xml";
+                        // string path = Server.MapPath(GeneratedXMLVirtualPath) + "//GeneratedPhotoXML.xml";
+
+                        System.IO.FileStream file = System.IO.File.Create(path);
+
+                        writer.Serialize(file, _annotation);
+                        file.Close();
+                    }                  
+                }
+               
+                return Json(savedData);
+            }
+            catch(Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
         }
     }
 

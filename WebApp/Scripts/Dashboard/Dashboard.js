@@ -1,6 +1,7 @@
 ﻿$formData = new FormData();
 
 download_img = function (el) {
+    debugger;
     // get image URI from canvas object
     var photoName = $("#PhotoName").val();
     var background = new Image();
@@ -714,6 +715,8 @@ function funcMoveNext() {
     } 
 }
 
+
+//#region Labels
 function createLabel() {
     $('.lblSpinner').css('display', 'block');
 
@@ -753,7 +756,7 @@ function createLabel() {
 
 function cancelLabel(uid) {
 
-    var labelId = document.getElementById(uid).getAttribute("labelId");
+    var labelId = document.getElementById("label_" + uid).getAttribute("labelId");
 
     if (labelId == null || labelId == "") {
         //If text field does not contain labelId attribute that means it is newly created input tag 
@@ -771,7 +774,7 @@ function cancelLabel(uid) {
         var idBtnCancel = "btnCancel_" + uid;
         var idBtnEdit = "btnEdit_" + uid;
         var idBtnDelete = "btnDelete_" + uid;
-        var inputEle = document.getElementById(uid);
+        var inputEle = document.getElementById("label_" + uid);
 
         inputEle.value = $("#" + hdnLabelText).val();
         inputEle.readOnly = true;
@@ -793,8 +796,8 @@ function cancelLabel(uid) {
 }
 
 function saveLabel(uid) {
-   
-    var labelValue = $("#" + uid).val();
+
+    var labelValue = $("#label_" + uid).val();
 
     var saveLabelUrl = $("#SaveLabelUrl").val();
     var idBtnSave = "btnSave_" + uid;
@@ -806,7 +809,7 @@ function saveLabel(uid) {
         showToastrJs(error, "Please enter label name");
     }
     else {
-        const inputEle = document.getElementById(uid);
+        const inputEle = document.getElementById("label_" + uid);
         var labelId = inputEle.getAttribute("labelId");
         const color = document.getElementById("iconCircle_" + uid).style.color;
         const userProjectId = $("#UserProjectId").val();
@@ -826,10 +829,10 @@ function saveLabel(uid) {
             contentType: 'application/json; charset=utf-8',
             type: 'POST',
             success: function (data) {
-               // $('.spinner').css('display', 'none');
+                // $('.spinner').css('display', 'none');
 
                 if (data.Id > -1) {
-                   // var inputEle = document.getElementById(uid);
+                    // var inputEle = document.getElementById(uid);
                     inputEle.setAttribute("labelId", data.Id);
                     inputEle.readOnly = true;
 
@@ -853,7 +856,7 @@ function saveLabel(uid) {
         });
 
     }
-  //  return false;
+    //  return false;
 }
 
 function editLabel(uid) {
@@ -862,7 +865,7 @@ function editLabel(uid) {
     var idBtnCancel = "btnCancel_" + uid;
     var idBtnEdit = "btnEdit_" + uid;
     var idBtnDelete = "btnDelete_" + uid;
-    var inputEle = document.getElementById(uid);
+    var inputEle = document.getElementById("label_" + uid);
 
     inputEle.readOnly = false;
 
@@ -880,7 +883,7 @@ function editLabel(uid) {
     $("#" + idBtnDelete).addClass("hideBtn");
 
     $("#wrapperDiv_" + uid).css("border", "2px solid red");
-  
+
     return false;
 }
 
@@ -903,7 +906,7 @@ function onKeyUp(val, uid) {
     var idBtnSave = "btnSave_" + uid;
 
     if (val !== "") {
-        if ($("#" + hdnLabelText).val() != val) {          
+        if ($("#" + hdnLabelText).val() != val) {
             document.getElementById(idBtnSave).disabled = false;
 
             return false;
@@ -918,7 +921,7 @@ function deleteLabel(uid) {
     var deleteLabelDataUrl = $("#DeleteLabelDataUrl").val();
     $('.spinner').css('display', 'block');
 
-    var labelId = document.getElementById(uid).getAttribute("labelId");
+    var labelId = document.getElementById("label_" + uid).getAttribute("labelId");
 
     $.ajax({
         url: deleteLabelDataUrl,
@@ -926,9 +929,9 @@ function deleteLabel(uid) {
         contentType: 'application/json; charset=utf-8',
         type: 'POST',
         success: function (data) {
-           // $('.spinner').css('display', 'none');
+            // $('.spinner').css('display', 'none');
             if (data.IsSaved) {
-                document.getElementById(uid).removeAttribute("labelId");
+                document.getElementById("label_" + uid).removeAttribute("labelId");
                 cancelLabel(uid);
             }
         }
@@ -943,4 +946,49 @@ function getStrokeColor(labelId) {
     }
     const color = document.getElementById("iconCircle_" + labelId).style.color;
     return color;
+}
+
+//#endregion 
+
+
+function generateXml() {
+    var xmlFlag = true;
+  
+    if ($("#IsProjectCompleted").val() == "True") {
+        xmlFlag = false; 
+    }
+
+    $("#iLoad").removeClass("hide");
+
+    var GenerateXmlUrl = $("#GenerateXmlUrl").val();
+
+    $.ajax({
+        url: GenerateXmlUrl,
+        data: '{xmlFlag:' + JSON.stringify(xmlFlag) + '}',
+        contentType: 'application/json; charset=utf-8',
+        type: 'POST',
+        success: function (data) {
+         
+            $("#iLoad").addClass("hide");
+
+            if (data.IsSaved) {
+                if (xmlFlag) {
+                    document.getElementById("btnCompleteProject").innerText = "Project Completed";
+                }
+                else {
+                    document.getElementById("btnCompleteProject").innerText = "Complete Project";
+                }
+
+                showToastrJs(success, "Changes saved successfully.");
+
+                window.location.href = "/WebApp/"; //If changes saved then redirect to Index page of app. 
+            }
+            else {
+                showToastrJs(error, "Error occured.");
+                return false;
+            }
+        }
+    }).fail(function (callResult) {
+        ShowAjaxFailMessage(callResult, 'An error occurred : ');
+    });
 }
