@@ -1,0 +1,98 @@
+export default class PolygonAnnotation {
+  constructor(canvas, options = {}) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext("2d");
+    this.polygons = [];
+    this.lineSegments = [];
+    this.circles = [];
+    this.tempLine = null;
+    this.isDrawing = false;
+    this.startX = null;
+    this.startY = null;
+    this.currentPolygon = null;
+    this.options = Object.assign({
+      strokeColor: "#ff0000",
+      fillColor: "rgba(255, 255, 102, 0.5)",
+      pointRadius: 5,
+    }, options);
+    this.initEvents();
+  }
+
+  initEvents() {
+    this.canvas.addEventListener("mousedown", (e) => this.handleMouseDown(e));
+    this.canvas.addEventListener("mousemove", (e) => this.handleMouseMove(e));
+    this.canvas.addEventListener("mouseup", (e) => this.handleMouseUp(e));
+  }
+
+  handleMouseDown(e) {
+    this.isDrawing = true;
+    const x = e.offsetX;
+    const y = e.offsetY;
+
+    if (!this.currentPolygon) {
+      this.currentPolygon = { polygonNo: this.polygons.length + 1, vertices: [{ x, y }] };
+    } else {
+      this.currentPolygon.vertices.push({ x, y });
+      this.lineSegments.push({ x1: this.startX, y1: this.startY, x2: x, y2: y });
+    }
+    this.startX = x;
+    this.startY = y;
+    this.redraw();
+  }
+
+  handleMouseMove(e) {
+    if (!this.isDrawing) return;
+    this.tempLine = {
+      x1: this.startX,
+      y1: this.startY,
+      x2: e.offsetX,
+      y2: e.offsetY,
+    };
+    this.redraw();
+  }
+
+  handleMouseUp(e) {
+    this.isDrawing = false;
+  }
+
+  closePolygon() {
+    if (this.currentPolygon && this.currentPolygon.vertices.length > 2) {
+      this.lineSegments.push({
+        x1: this.currentPolygon.vertices[0].x,
+        y1: this.currentPolygon.vertices[0].y,
+        x2: this.startX,
+        y2: this.startY,
+      });
+      this.polygons.push(this.currentPolygon);
+      this.currentPolygon = null;
+      this.tempLine = null;
+      this.redraw();
+    }
+  }
+
+  redraw() {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.strokeStyle = this.options.strokeColor;
+    this.ctx.fillStyle = this.options.fillColor;
+    this.lineSegments.forEach(({ x1, y1, x2, y2 }) => {
+      this.ctx.beginPath();
+      this.ctx.moveTo(x1, y1);
+      this.ctx.lineTo(x2, y2);
+      this.ctx.stroke();
+    });
+    if (this.tempLine) {
+      this.ctx.beginPath();
+      this.ctx.moveTo(this.tempLine.x1, this.tempLine.y1);
+      this.ctx.lineTo(this.tempLine.x2, this.tempLine.y2);
+      this.ctx.stroke();
+    }
+    this.circles.forEach(({ x, y }) => this.drawCircle(x, y));
+  }
+
+  drawCircle(x, y) {
+    this.ctx.fillStyle = this.options.fillColor;
+    this.ctx.beginPath();
+    this.ctx.arc(x, y, this.options.pointRadius, 0, 2 * Math.PI);
+    this.ctx.fill();
+  }
+}
